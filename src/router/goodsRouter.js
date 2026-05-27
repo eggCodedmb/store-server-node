@@ -2,7 +2,7 @@
 const Router = require("koa-router");
 
 // 引入认证和权限中间件
-const { auth, verifAdmin } = require("../middleware/authMiddleware");
+const { auth, authorize } = require("../middleware/authMiddleware");
 
 const { validateParams } = require("../middleware/genericMiddleware");
 
@@ -29,7 +29,7 @@ router.post(
   "/",
   validateParams(goodsFormatRules, goodsUpdateError),
   auth,
-  verifAdmin,
+  authorize(),
   create
 );
 
@@ -38,18 +38,18 @@ router.put(
   "/:id",
   validateParams(goodsFormatRules, goodsUpdateError),
   auth,
-  verifAdmin,
+  authorize(),
   update
 );
 
 // 路由：删除商品
-router.post("/off", auth, verifAdmin, removal);
+router.post("/off", auth, authorize(), removal);
 
 // 路由：恢复删除的商品
-router.post("/on", auth, verifAdmin, restore);
+router.post("/on", auth, authorize(), restore);
 
 // 路由：获取所有删除的商品
-router.post("/removal", auth, verifAdmin, findAllRemoval);
+router.post("/removal", auth, authorize(), findAllRemoval);
 
 // 路由：获取所有商品
 router.get("/", findAll);

@@ -4,11 +4,11 @@ const {
   TokenExpiredError,
   JsonWebTokenError,
   NullTokenError,
-  ontAdmin,
   refreshTokenError,
   serverError,
+  forbiddenError,
 } = require("../constant/errType"); // 导入错误类型
-const { getUserInfo } = require("../service/userService");
+const { getEnforcer } = require("../utils/casbin");
 
 /**
  * 验证用户身份的中间件
@@ -40,22 +40,33 @@ const auth = async (ctx, next) => {
 };
 
 /**
- * 检查是否是管理员
+ * Casbin 权限验证中间件
+ * @param {string} [resource] 资源标识，如果不传则自动获取请求路径
+ * @param {string} [action] 操作标识，如果不传则自动获取请求方法
  */
-const verifAdmin = async (ctx, next) => {
-  try {
-    const { id, user_name } = await ctx.state.user;
-    const res = await getUserInfo({ id, user_name });
+const authorize = (resource, action) => {
+  return async (ctx, next) => {
+    try {
+      const { id } = ctx.state.user;
+      const enforcer = await getEnforcer();
 
-    if (res?.is_admin) {
-      await next();
-    } else {
-      ctx.app.emit("error", ontAdmin, ctx);
+      // 如果没有指定资源和操作，则从请求中获取
+      const obj = resource || ctx.path;
+      const act = action || ctx.method;
+      const sub = id.toString();
+
+      const isAllowed = await enforcer.enforce(sub, obj, act);
+
+      if (isAllowed) {
+        await next();
+      } else {
+        ctx.app.emit("error", forbiddenError, ctx);
+      }
+    } catch (err) {
+      console.error("Casbin Error:", err);
+      ctx.app.emit("error", serverError, ctx);
     }
-  } catch (err) {
-    ctx.app.emit("error", serverError, ctx);
-    throw err;
-  }
+  };
 };
 
 /**
@@ -103,6 +114,6 @@ const refreshToken = async (ctx, next) => {
 
 module.exports = {
   auth,
-  verifAdmin,
   refreshToken,
+  authorize,
 };

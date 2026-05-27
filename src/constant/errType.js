@@ -241,4 +241,9 @@ module.exports = {
     message: "由于您频繁访问,已被封禁300秒",
     result: "",
   },
+  forbiddenError: {
+    code: "10108",
+    message: "您没有权限执行此操作",
+    result: "",
+  },
 };

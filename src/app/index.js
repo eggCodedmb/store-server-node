@@ -1,5 +1,6 @@
 const path = require("path");
 const Koa = require("koa");
+const cors = require("koa2-cors");
 const parameter = require("koa-parameter");
 const { koaBody } = require("koa-body");
 const KoaStatic = require("koa-static");
@@ -12,6 +13,8 @@ const { connectRedis } = require("../utils/redis");
 
 // 连接redis
 connectRedis();
+
+app.use(cors());
 
 // 静态资源
 app.use(KoaStatic(path.join(__dirname, "../public")));

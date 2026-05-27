@@ -1,25 +1,49 @@
-const User = require("./user/user");
-const Goods = require("./product/goods");
-const Cart = require("./cart/cart");
-const Address = require("./address/address");
-const Order = require("./order/order");
-const OrderItem = require("./order/orderItem");
+const {
+  User,
+  Goods,
+  Cart,
+  Address,
+  Order,
+  OrderItem,
+  Role,
+  Permission,
+  UserRole,
+  RolePermission,
+  Category,
+  GoodsCategory,
+} = require("./index");
+const seq = require("../db/seq");
 
 // 同步模型
 const syncModels = async () => {
   try {
-    // 先同步基础模型（不带外键依赖的模型）
+    // 禁用外键检查，以便顺利删除和重建表
+    await seq.query("SET FOREIGN_KEY_CHECKS = 0");
+
+    // 1. 同步基础模型
     await User.sync({ force: true });
     await Goods.sync({ force: true });
+    await Permission.sync({ force: true });
+    await Role.sync({ force: true });
+    await Category.sync({ force: true });
+
+    // 2. 同步映射表
+    await UserRole.sync({ force: true });
+    await RolePermission.sync({ force: true });
+    await GoodsCategory.sync({ force: true });
+
+    // 3. 同步业务模型
     await Address.sync({ force: true });
     await Cart.sync({ force: true });
-
-    // 再同步依赖模型（带有外键的模型）
     await Order.sync({ force: true });
     await OrderItem.sync({ force: true });
 
+    // 重新启用外键检查
+    await seq.query("SET FOREIGN_KEY_CHECKS = 1");
+
     console.log("所有模型同步完成");
   } catch (error) {
+    await seq.query("SET FOREIGN_KEY_CHECKS = 1");
     console.error("同步模型时出错:", error);
   }
 };
@@ -27,15 +51,23 @@ const syncModels = async () => {
 // 删除所有模型
 const dropModels = async () => {
   try {
-    // 先删除带外键
-    await Address.drop();
+    await seq.query("SET FOREIGN_KEY_CHECKS = 0");
     await OrderItem.drop();
-    await Cart.drop();
     await Order.drop();
-    await User.drop();
+    await Cart.drop();
+    await Address.drop();
+    await GoodsCategory.drop();
+    await RolePermission.drop();
+    await UserRole.drop();
+    await Category.drop();
+    await Role.drop();
+    await Permission.drop();
     await Goods.drop();
+    await User.drop();
+    await seq.query("SET FOREIGN_KEY_CHECKS = 1");
     console.log("所有模型删除成功");
   } catch (error) {
+    await seq.query("SET FOREIGN_KEY_CHECKS = 1");
     console.error("删除模型时出错:", error);
   }
 };

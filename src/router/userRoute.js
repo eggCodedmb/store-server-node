@@ -7,6 +7,8 @@ const {
   queryUserInfo,
   getAllUser,
   changeUser,
+  getPermissions,
+  wechatLogin,
 } = require("../controller/userController");
 
 // 导入中间件
@@ -22,8 +24,8 @@ const { validateParams } = require("../middleware/genericMiddleware");
 // 中间件
 const {
   auth,
-  verifAdmin,
   refreshToken,
+  authorize,
 } = require("../middleware/authMiddleware");
 
 // 验证码中间件
@@ -34,6 +36,7 @@ const { userFormateError } = require("../constant/errType");
 // 规则
 const {
   registerRules,
+  adminAddUserRules,
   loginRules,
   updateUserRules: changeUserRules,
 } = require("../constant/rules");
@@ -46,6 +49,18 @@ router.post(
   "/register",
   validateParams(registerRules, userFormateError),
   validateCaptcha,
+  verifyUserExists,
+  verifyEmailExists,
+  BcryptPassword,
+  register
+);
+
+// 管理员添加用户接口 (无需验证码)
+router.post(
+  "/add",
+  auth,
+  authorize("/user/add", "POST"),
+  validateParams(adminAddUserRules, userFormateError),
   verifyUserExists,
   verifyEmailExists,
   BcryptPassword,
@@ -83,13 +98,20 @@ router.patch(
 );
 
 // 查询用户信息
-router.post("/", auth, verifAdmin, queryUserInfo);
+router.post("/", auth, authorize("/user/", "POST"), queryUserInfo);
 
 // 查询所有用户
-router.post("/all", auth, verifAdmin, getAllUser);
+// 使用 Casbin 权限校验替代简单的 verifAdmin
+router.post("/all", auth, authorize("/user/all", "POST"), getAllUser);
 
 // 刷新token接口
 router.post("/refresh_token", refreshToken);
+
+// 获取用户权限清单
+router.get("/permissions", auth, getPermissions);
+
+// 微信小程序登录
+router.post("/wxlogin", wechatLogin);
 
 // 导出路由模块
 module.exports = router;

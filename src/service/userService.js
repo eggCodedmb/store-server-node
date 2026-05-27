@@ -21,13 +21,12 @@ class UserService {
    */
   async getUserInfo(user) {
     // 解构出信息，避免传入 undefined 时出错
-    const { id, user_name, is_admin,email } = user || {};
+    const { id, user_name, email } = user || {};
 
     const whereOpt = {
       ...(id && { id }),
       ...(email && { email }),
       ...(user_name && { user_name }),
-      ...(is_admin && { is_admin }),
     };
 
     // 判断如果是一个空对象，则返回
@@ -42,19 +41,40 @@ class UserService {
   }
 
   /**
+   * 根据 openid 查找或创建用户
+   * @param {string} openid 微信 openid
+   * @param {object} userInfo 用户额外信息 (如昵称、头像)
+   */
+  async findOrCreateByOpenid(openid, userInfo = {}) {
+    const { nick_name, avatar, unionid } = userInfo;
+    const [user, created] = await User.findOrCreate({
+      where: { openid },
+      defaults: {
+        openid,
+        unionid,
+        nick_name: nick_name || `微信用户_${openid.slice(-6)}`,
+        avatar: avatar || "https://cube.elemecdn.com/0/88/03b0d39583f48206768a7534e55bcpng.png",
+        user_name: `wx_${openid.slice(-10)}`,
+        password: "", // 微信登录用户密码为空
+        email: "",    // 微信登录用户邮箱为空
+      },
+    });
+    return user.dataValues;
+  }
+
+  /**
    * 根据用户 ID 更新用户信息
    * @param {number} id 用户ID
    * @param {object} data 更新数据
    * @returns {Promise<boolean>} 返回更新是否成功
    */
   async updateById(id, data) {
-    const { email, is_admin, avatar, nick_name, password } = data || {};
+    const { email, avatar, nick_name, password } = data || {};
 
     // 条件查询构建（自动忽略 undefined 的值）
     const userData = {
       ...(email && { email }),
       ...(avatar && { avatar }),
-      ...(is_admin && { is_admin }),
       ...(nick_name && { nick_name }),
       ...(password && { password }),
     };

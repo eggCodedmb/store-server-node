@@ -3,20 +3,71 @@ const {
   getUserInfo,
   updateById,
   findAllUser,
+  findOrCreateByOpenid,
 } = require("../service/userService");
 const { createToken } = require("../config/jwt");
+const https = require("https");
+const { WX_APPID, WX_APPSECRET } = require("../config/config.default");
 const {
   comparePassword,
   hashPassword,
 } = require("../utils/passwordUtils/bcrypt");
-
+const { Role } = require("../model/index");
+const RbacService = require("../service/rbacService");
 const {
   updateUserError,
   updatePasswordError,
   oldPasswordError,
   notUserExited,
 } = require("../constant/errType");
+const { getEnforcer } = require("../utils/casbin");
+const User = require("../model/user/user");
+
 class UseContrller {
+  /**
+   * 获取当前用户的权限清单（菜单、按钮、角色）
+   */
+  async getPermissions(ctx) {
+    try {
+      const { id } = ctx.state.user;
+      const enforcer = await getEnforcer();
+
+      // 获取用户拥有的所有角色
+      const roles = await enforcer.getRolesForUser(id.toString());
+
+      // 获取用户拥有的所有权限（包括继承自角色的）
+      // getImplicitPermissionsForUser 会递归获取所有权限
+      const permissions = await enforcer.getImplicitPermissionsForUser(
+        id.toString()
+      );
+
+      const menus = [];
+      const buttons = [];
+
+      permissions.forEach((p) => {
+        const [sub, obj, act] = p;
+        if (act === "view") {
+          menus.push(obj);
+        } else if (act === "use") {
+          buttons.push(obj);
+        }
+      });
+
+      ctx.body = {
+        code: 0,
+        message: "获取权限成功",
+        result: {
+          roles,
+          menus,
+          buttons,
+        },
+      };
+    } catch (error) {
+      console.error("Get Permissions Error:", error);
+      ctx.app.emit("error", serverError, ctx);
+    }
+  }
+
   /**
    * 用户注册方法
    * @returns {Promise<void>}
@@ -29,6 +80,9 @@ class UseContrller {
         "http://47.119.172.215:9988/online/0008cbace240eee93a3327500.jpg";
       //2.操作数据库
       const { password, ...res } = await createUser(user);
+
+      // 3. 分配默认角色
+      await this._assignDefaultRole(res.id);
 
       ctx.body = {
         code: 0,
@@ -162,6 +216,83 @@ class UseContrller {
       };
     } catch (error) {
       throw error;
+    }
+  }
+
+  /**
+   * 微信小程序登录
+   */
+  async wechatLogin(ctx) {
+    try {
+      const { code, userInfo } = ctx.request.body;
+      if (!code) {
+        ctx.body = { code: "10010", message: "Missing code" };
+        return;
+      }
+
+      // 1. 调用微信 code2Session 接口
+      const url = `https://api.weixin.qq.com/sns/jscode2session?appid=${WX_APPID}&secret=${WX_APPSECRET}&js_code=${code}&grant_type=authorization_code`;
+      
+      const wxRes = await new Promise((resolve, reject) => {
+        https.get(url, (res) => {
+          let data = "";
+          res.on("data", (chunk) => (data += chunk));
+          res.on("end", () => resolve(JSON.parse(data)));
+        }).on("error", (err) => reject(err));
+      });
+
+      if (wxRes.errcode) {
+        ctx.body = {
+          code: wxRes.errcode,
+          message: wxRes.errmsg,
+        };
+        return;
+      }
+
+      const { openid, unionid } = wxRes;
+
+      // 2. 登录或注册用户
+      const user = await findOrCreateByOpenid(openid, { ...userInfo, unionid });
+
+      // 3. 分配默认角色 (如果是新用户)
+      await this._assignDefaultRole(user.id);
+
+      // 4. 生成 Token
+      const accessToken = createToken(user, "12h");
+      const refreshToken = createToken(user, "30d");
+
+      ctx.body = {
+        code: 0,
+        message: "微信登录成功",
+        result: {
+          user,
+          accessToken,
+          refreshToken,
+        },
+      };
+    } catch (error) {
+      console.error("Wechat Login Error:", error);
+      ctx.body = {
+        code: "10011",
+        message: "微信登录失败",
+        result: error,
+      };
+    }
+  }
+
+  /**
+   * 为用户分配默认角色 (common_user)
+   * @param {number} userId 
+   */
+  async _assignDefaultRole(userId) {
+    try {
+      const commonRole = await Role.findOne({ where: { role_key: "common_user" } });
+      if (commonRole) {
+        // 使用 RbacService 分配角色，这会自动同步到 Casbin
+        await RbacService.assignRolesToUser(userId, [commonRole.id]);
+      }
+    } catch (error) {
+      console.error("Assign Default Role Error:", error);
     }
   }
 }

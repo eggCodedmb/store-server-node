@@ -47,6 +47,29 @@ module.exports = {
       required: true,
     },
   },
+  adminAddUserRules: {
+    user_name: {
+      type: "string",
+      min: 4,
+      max: 16,
+      required: true,
+    },
+    email: {
+      type: "string",
+      required: true,
+      format: /^([a-zA-Z0-9_-])+@([a-zA-Z0-9_-])+(.[a-zA-Z0-9_-])+/,
+    },
+    password: {
+      type: "string",
+      min: 6,
+      max: 16,
+      required: true,
+    },
+    nick_name: {
+      type: "string",
+      required: false,
+    }
+  },
   loginRules: {
     user_name: {
       type: "string",
