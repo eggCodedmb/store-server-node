@@ -1,6 +1,6 @@
-const { findAll } = require("../controller/addressController");
 const User = require("../model/user/user");
 const { Op } = require("sequelize");
+const { Role } = require("../model/index");
 class UserService {
   /**
    * 创建用户
@@ -95,20 +95,51 @@ class UserService {
     try {
       const offset = (pageNum - 1) * pageSize;
       const { count, rows } = await User.findAndCountAll({
+        attributes: { exclude: ["password"] },
+        include: [
+          {
+            model: Role,
+            attributes: ["id", "role_name", "role_key"],
+            through: { attributes: [] },
+          },
+        ],
         limit: +pageSize,
         offset: +offset,
         order: [["createdAt", "DESC"]],
+        distinct: true, // 确保 count 正确
       });
 
       return {
-        pageNum,
-        pageSize,
+        pageNum: +pageNum,
+        pageSize: +pageSize,
         total: count,
         users: rows,
       };
     } catch (error) {
       throw error;
     }
+  }
+
+  /**
+   * 删除用户
+   * @param {number} id 用户ID
+   * @returns {Promise<boolean>} 返回删除是否成功
+   */
+  async removeUser(id) {
+    const { getEnforcer } = require("../utils/casbin");
+    const enforcer = await getEnforcer();
+
+    // 1. 删除 Casbin 角色关系
+    await enforcer.deleteRolesForUser(id.toString());
+    await enforcer.savePolicy();
+
+    // 2. 删除用户表记录 (会自动清理 UserRole 关联，如果设置了级联删除)
+    // 如果没有设置级联删除，需要手动清理 UserRole
+    const { UserRole } = require("../model/index");
+    await UserRole.destroy({ where: { userId: id } });
+
+    const res = await User.destroy({ where: { id } });
+    return res > 0;
   }
 }
 

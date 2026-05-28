@@ -85,10 +85,10 @@ const verifyUser = async (ctx, next) => {
   try {
     const user = ctx.request.body;
     const res = await getUserInfo(user);
-    console.log('email通过');
 
     if (res && res.user_name === user.user_name) {
       // 如果用户存在，继续下一个中间件
+      console.log('用户名验证通过');
       await next();
     } else {
       return ctx.app.emit("error", notUserExited, ctx);
@@ -106,7 +106,7 @@ const verifyPassword = async (ctx, next) => {
 
     // 检查用户是否存在
     if (!userInfo) {
-      return ctx.app.emit("error", userNotFound, ctx);
+      return ctx.app.emit("error", notUserExited, ctx);
     }
 
     // 获取存储的哈希密码
@@ -119,6 +119,7 @@ const verifyPassword = async (ctx, next) => {
     }
 
     // 如果匹配，继续执行下一个中间件
+    console.log('密码验证通过');
     await next();
   } catch (error) {
     throw error;

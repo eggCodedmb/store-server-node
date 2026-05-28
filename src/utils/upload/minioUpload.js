@@ -45,23 +45,22 @@ function bucketExists() {
   return new Promise((resolve, reject) => {
     minioClient.bucketExists(STORAGE_BUCKET, function (err, exists) {
       if (err) {
-        if (err.code == "NoSuchBucket") {
-          // 如果bucket不存在，创建新的bucket
-          minioClient.makeBucket(STORAGE_BUCKET, "us-east-1", function (err) {
-            if (err) {
-              console.log("桶创建失败", err);
-              resolve(false);
-            } else {
-              console.log("桶创建成功");
-              resolve(true);
-            }
-          });
-        } else {
-          console.log("检查桶是否存在时出错:", err);
-          resolve(false);
-        }
-      } else {
+        console.log("检查桶是否存在时出错:", err);
+        return resolve(false);
+      }
+      if (exists) {
         resolve(true);
+      } else {
+        // 如果bucket不存在，创建新的bucket
+        minioClient.makeBucket(STORAGE_BUCKET, "us-east-1", function (err) {
+          if (err) {
+            console.log("桶创建失败", err);
+            resolve(false);
+          } else {
+            console.log("桶创建成功");
+            resolve(true);
+          }
+        });
       }
     });
   });

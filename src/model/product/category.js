@@ -11,7 +11,7 @@ const Category = seq.define(
       autoIncrement: true,
     },
     // 分类名称
-    name: {
+    category_name: {
       type: DataTypes.STRING,
       allowNull: false,
       validate: {

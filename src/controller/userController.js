@@ -109,6 +109,10 @@ class UseContrller {
       // 刷新token
       const accessToken = createToken(user, "12h");
       const refreshToken = createToken(user, "12h");
+
+      // 更新最后活跃时间 (通过触发 updatedAt)
+      await updateById(user.id, {});
+
       // 返回数据
       ctx.body = {
         code: 0,
@@ -215,6 +219,28 @@ class UseContrller {
         result: res,
       };
     } catch (error) {
+      throw error;
+    }
+  }
+
+  /**
+   * 删除用户
+   */
+  async deleteUser(ctx) {
+    try {
+      const { id } = ctx.params;
+      const res = await require("../service/userService").removeUser(id);
+      if (res) {
+        ctx.body = {
+          code: 0,
+          message: "删除用户成功",
+          result: "",
+        };
+      } else {
+        ctx.app.emit("error", { code: "10110", message: "用户不存在或删除失败" }, ctx);
+      }
+    } catch (error) {
+      console.error("Delete User Error:", error);
       throw error;
     }
   }

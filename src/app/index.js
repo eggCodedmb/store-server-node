@@ -80,8 +80,8 @@ app.use(
       ),
       // 保留文件扩展名
       keepExtensions: true,
-      // 文件大小限制 2MB
-      maxFieldsSize: 5 * 1024 * 1024,
+      // 文件大小限制 5MB
+      maxFileSize: 5 * 1024 * 1024,
     },
     parsedMethods: ["GET", "POST", "PUT", "PATCH", "DELETE"],
   })

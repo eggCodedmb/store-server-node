@@ -1,5 +1,5 @@
 const Router = require("koa-router");
-const { auth } = require("../middleware/authMiddleware"); // 认证用户
+const { auth, authorize } = require("../middleware/authMiddleware"); // 认证用户
 const { validateParams } = require("../middleware/genericMiddleware");
 const {
   create,
@@ -20,7 +20,7 @@ router.post(
   create
 );
 
-router.post("/", auth, findAllOrder);
+router.post("/", auth, authorize("/order", "POST"), findAllOrder);
 router.delete(
   "/:id",
   validateParams(
@@ -30,6 +30,7 @@ router.delete(
     orderFormError
   ),
   auth,
+  authorize("/order/:id", "DELETE"),
   deleteOrder
 );
 
@@ -44,6 +45,6 @@ router.get(
   auth,
   getOneOrder
 );
-router.patch("/:id", auth, updateStatus);
+router.patch("/:id", auth, authorize("/order/:id", "PATCH"), updateStatus);
 
 module.exports = router;

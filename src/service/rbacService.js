@@ -51,26 +51,69 @@ class RbacService {
    * 为角色分配权限
    */
   async assignPermissionsToRole(roleId, permissionIds) {
-    // 1. 更新物理表
-    await RolePermission.destroy({ where: { roleId } });
-    const mapping = permissionIds.map(permId => ({ roleId, permissionId: permId }));
-    await RolePermission.bulkCreate(mapping);
+    const seq = require("../db/seq");
+    
+    await seq.transaction(async (t) => {
+      // 1. 更新物理表
+      await RolePermission.destroy({ where: { roleId }, transaction: t });
+      
+      if (permissionIds && permissionIds.length > 0) {
+        const mapping = permissionIds.map(permId => ({ roleId, permissionId: permId }));
+        await RolePermission.bulkCreate(mapping, { transaction: t });
+      }
 
-    // 2. 同步到 Casbin
-    await this.syncAllToCasbin();
+      // 2. 同步到 Casbin
+      // 这里调用 syncAllToCasbin，它内部不使用当前事务，但如果它抛错，物理事务会回滚
+      await this.syncAllToCasbin();
+    });
   }
 
   /**
    * 为用户分配角色
    */
-  async assignRolesToUser(userId, roleIds) {
-    // 1. 更新物理表
-    await UserRole.destroy({ where: { userId } });
-    const mapping = roleIds.map(roleId => ({ userId, roleId }));
-    await UserRole.bulkCreate(mapping);
+  async assignRolesToUser(userId, roleIds = []) {
+    const seq = require("../db/seq");
+    const enforcer = await getEnforcer();
+    
+    await seq.transaction(async (t) => {
+      // 1. 更新物理表
+      const uId = parseInt(userId);
+      
+      // 检查用户是否存在
+      const { User } = require("../model/index");
+      const user = await User.findByPk(uId, { transaction: t });
+      if (!user) {
+        throw new Error("用户不存在");
+      }
+      
+      await UserRole.destroy({ where: { userId: uId }, transaction: t });
+      
+      if (roleIds && roleIds.length > 0) {
+        // 验证角色是否存在
+        const existingRoles = await Role.findAll({ where: { id: roleIds }, transaction: t });
+        const existingRoleIds = existingRoles.map(r => r.id);
+        
+        if (existingRoleIds.length > 0) {
+          const mapping = existingRoleIds.map(roleId => ({ userId: uId, roleId }));
+          await UserRole.bulkCreate(mapping, { transaction: t });
+        }
+      }
 
-    // 2. 同步到 Casbin
-    await this.syncAllToCasbin();
+      // 2. 更新 Casbin
+      await enforcer.deleteRolesForUser(userId.toString());
+      
+      if (roleIds && roleIds.length > 0) {
+        // 再次获取角色信息以确保拿到最新的 role_key
+        const roles = await Role.findAll({ where: { id: roleIds }, transaction: t });
+        for (const role of roles) {
+          await enforcer.addRoleForUser(userId.toString(), role.role_key);
+        }
+      }
+
+      await enforcer.savePolicy();
+    });
+    
+    console.log(`用户 ${userId} 的角色已更新并同步至 Casbin`);
   }
 }
 

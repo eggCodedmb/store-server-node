@@ -11,6 +11,7 @@ const {
   RolePermission,
   Category,
   GoodsCategory,
+  Notice,
 } = require("./index");
 const seq = require("../db/seq");
 
@@ -26,6 +27,7 @@ const syncModels = async () => {
     await Permission.sync({ force: true });
     await Role.sync({ force: true });
     await Category.sync({ force: true });
+    await Notice.sync({ force: true });
 
     // 2. 同步映射表
     await UserRole.sync({ force: true });
@@ -64,6 +66,7 @@ const dropModels = async () => {
     await Permission.drop();
     await Goods.drop();
     await User.drop();
+    await Notice.drop();
     await seq.query("SET FOREIGN_KEY_CHECKS = 1");
     console.log("所有模型删除成功");
   } catch (error) {

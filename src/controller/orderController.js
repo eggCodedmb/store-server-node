@@ -83,22 +83,18 @@ class OrderController {
 
   async findAllOrder(ctx) {
     try {
-      const user_id = ctx.state.user.id;
-      const { pageNum, pageSize } = ctx.request.body;
-      await getUserOrdersWithProducts(user_id, pageNum, pageSize).then(
-        (res) => {
-          ctx.body = {
-            code: 0,
-            message: "订单列表",
-            result: {
-              pageNum: res.pageNum,
-              pageSize: res.pageSize,
-              total: res.total,
-              list: res.list,
-            },
-          };
-        }
-      );
+      // 如果 body 中明确传了 userId，则按该 userId 查（通常用于后台查特定用户订单）
+      // 如果没有传，且用户不是超级管理员，则只查自己的
+      // 这里为了简化，我们先支持从 body 传 userId，如果不传则查所有（后台逻辑）
+      // 前台逻辑通常会传特定的过滤条件
+      const { pageNum, pageSize, userId } = ctx.request.body;
+      
+      const res = await getUserOrdersWithProducts(userId, pageNum, pageSize);
+      ctx.body = {
+        code: 0,
+        message: "订单列表获取成功",
+        result: res
+      };
     } catch (error) {
       ctx.app.emit("error", verifyOntOrder, ctx);
       throw error;
@@ -123,12 +119,17 @@ class OrderController {
   async updateStatus(ctx) {
     try {
       const { id } = ctx.request.params;
-      const res = await updateOrderStatus(id);
-      ctx.body = {
-        code: 0,
-        message: "状态更新成功",
-        result: res,
-      };
+      const { state } = ctx.request.body;
+      const res = await updateOrderStatus(id, state);
+      if (res) {
+        ctx.body = {
+          code: 0,
+          message: "状态更新成功",
+          result: res,
+        };
+      } else {
+        ctx.app.emit("error", updateOrderError, ctx);
+      }
     } catch (error) {
       ctx.app.emit("error", updateOrderError, ctx);
       throw error;

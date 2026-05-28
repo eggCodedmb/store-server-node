@@ -24,7 +24,11 @@ class uploadController {
    * 图片上传
    */
   async upload(ctx) {
-    const { file } = ctx.request.files;
+    const { file } = ctx.request.files || {};
+    if (!file) {
+      return ctx.app.emit("error", fileUploadError, ctx);
+    }
+
     try {
       let URL_BASEURL = BASEURL;
 
@@ -59,16 +63,19 @@ class uploadController {
         case "minio":
           const minioList = []; // 初始化minioList
           if (Array.isArray(file)) {
-            const uploadPromises = file.map(async (item) => {
+            for (let item of file) {
               const minioRes = await minioUpload(item.filepath);
+              if (!minioRes) {
+                throw new Error("MinIO upload failed");
+              }
               const fileItem = `http://${STORAGE_HOST}:9000${minioRes}`;
-              return fileItem;
-            });
-            const minioUrls = await Promise.all(uploadPromises);
-
-            minioList.push(...minioUrls);
+              minioList.push(fileItem);
+            }
           } else {
             const minioRes = await minioUpload(file.filepath);
+            if (!minioRes) {
+              throw new Error("MinIO upload failed");
+            }
             const minioUrl = `http://${STORAGE_HOST}:9000${minioRes}`;
             minioList.push(minioUrl);
           }

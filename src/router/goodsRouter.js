@@ -13,8 +13,8 @@ const {
   removal,
   restore,
   findAll,
-  findAllRemoval,
-  getProductSearch,
+  getRemove,
+  findGoodsByName,
   queryNewGoods,
   querySalesGoods,
   getProduct,
@@ -49,16 +49,16 @@ router.post("/off", auth, authorize(), removal);
 router.post("/on", auth, authorize(), restore);
 
 // 路由：获取所有删除的商品
-router.post("/removal", auth, authorize(), findAllRemoval);
+router.post("/removal", auth, authorize(), getRemove);
 
 // 路由：获取所有商品
 router.get("/", findAll);
 
 // 路由：获取一个商品
-router.get("/product", getProduct);
+router.get("/product/:id", getProduct);
 
 // 路由：商品搜索
-router.get("/search_goods", getProductSearch);
+router.get("/search_goods", findGoodsByName);
 
 // 新品
 router.get("/new_goods", queryNewGoods);

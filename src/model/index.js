@@ -6,6 +6,7 @@ const Order = require("./order/order");
 const OrderItem = require("./order/orderItem");
 const Category = require("./product/category");
 const GoodsCategory = require("./product/goodsAndCategory");
+const Notice = require("./system/notice");
 
 // RBAC Models
 const Role = require("./rbac/Role");
@@ -78,4 +79,5 @@ module.exports = {
   RolePermission,
   Category,
   GoodsCategory,
+  Notice,
 };

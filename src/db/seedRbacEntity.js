@@ -1,4 +1,4 @@
-const { Role, Permission, User } = require("../model/index");
+﻿const { Role, Permission, User } = require("../model/index");
 const RbacService = require("../service/rbacService");
 const { hashPassword } = require("../utils/passwordUtils/bcrypt");
 
@@ -12,24 +12,63 @@ const seedRBAC = async () => {
       defaults: { role_name: "超级管理员", remark: "拥有所有权限" },
     });
 
-    const [userRole] = await Role.findOrCreate({
-      where: { role_key: "common_user" },
-      defaults: { role_name: "普通用户", remark: "仅拥有基础查看权限" },
-    });
-
     // 2. 创建权限点
     const permsData = [
-      // 菜单
-      { name: "控制台", code: "/dashboard", type: 1 },
-      { name: "用户管理", code: "/user_manage", type: 1 },
-      { name: "商品管理", code: "/goods_manage", type: 1 },
-      // 按钮
-      { name: "添加用户按钮", code: "user:add_btn", type: 2 },
-      { name: "删除用户按钮", code: "user:delete_btn", type: 2 },
-      // 接口
-      { name: "查询用户接口", code: "api:user:all", type: 3, path: "/user/all", method: "POST" },
-      { name: "创建用户接口", code: "api:user:add", type: 3, path: "/user/add", method: "POST" },
-      { name: "修改密码接口", code: "api:user:change-password", type: 3, path: "/user/change-password", method: "PATCH" },
+      // 菜单 (Type: 1)
+      { name: "控制台", code: "/dashboard", type: 1, parent_id: 0 },
+      { name: "用户管理", code: "/user_manage", type: 1, parent_id: 0 },
+      { name: "分类管理", code: "/category_manage", type: 1, parent_id: 0 },
+      { name: "商品管理", code: "/goods_manage", type: 1, parent_id: 0 },
+      { name: "订单管理", code: "/order_manage", type: 1, parent_id: 0 },
+      { name: "地址管理", code: "/address_manage", type: 1, parent_id: 0 },
+      { name: "系统管理", code: "/system", type: 1, parent_id: 0 },
+      { name: "角色管理", code: "/system/role", type: 1, parent_id: 7 }, // 根据顺序更新ID
+      { name: "菜单管理", code: "/system/menu", type: 1, parent_id: 7 },
+      { name: "公告管理", code: "/system/notice", type: 1, parent_id: 7 },
+      
+      // 按钮 (Type: 2)
+      { name: "添加商品按钮", code: "goods:add_btn", type: 2, parent_id: 4 },
+      { name: "编辑商品按钮", code: "goods:edit_btn", type: 2, parent_id: 4 },
+      { name: "下架商品按钮", code: "goods:delete_btn", type: 2, parent_id: 4 },
+      { name: "权限分配按钮", code: "user:assign_role_btn", type: 2, parent_id: 2 },
+      { name: "分配权限按钮", code: "role:assign_perm_btn", type: 2, parent_id: 8 },
+      
+      // 接口 (Type: 3)
+      { name: "查询商品接口", code: "api:goods:all", type: 3, path: "/goods/", method: "GET", parent_id: 4 },
+      { name: "创建商品接口", code: "api:goods:create", type: 3, path: "/goods/", method: "POST", parent_id: 4 },
+      { name: "编辑商品接口", code: "api:goods:update", type: 3, path: "/goods/:id", method: "PUT", parent_id: 4 },
+      { name: "下架商品接口", code: "api:goods:off", type: 3, path: "/goods/off", method: "POST", parent_id: 4 },
+      { name: "上架商品接口", code: "api:goods:on", type: 3, path: "/goods/on", method: "POST", parent_id: 4 },
+      { name: "查询下架商品接口", code: "api:goods:removal", type: 3, path: "/goods/removal", method: "POST", parent_id: 4 },
+      { name: "查询分类接口", code: "api:category:all", type: 3, path: "/category/", method: "GET", parent_id: 3 },
+      { name: "创建分类接口", code: "api:category:create", type: 3, path: "/category/", method: "POST", parent_id: 3 },
+      { name: "更新分类接口", code: "api:category:update", type: 3, path: "/category/:id", method: "PUT", parent_id: 3 },
+      { name: "删除分类接口", code: "api:category:delete", type: 3, path: "/category/:id", method: "DELETE", parent_id: 3 },
+      { name: "分类添加商品接口", code: "api:category:add_goods", type: 3, path: "/category/:id/goods", method: "POST", parent_id: 3 },
+      { name: "分类移除商品接口", code: "api:category:remove_goods", type: 3, path: "/category/:id/goods", method: "DELETE", parent_id: 3 },
+      { name: "查询订单接口", code: "api:order:all", type: 3, path: "/order", method: "POST", parent_id: 5 },
+      { name: "删除订单接口", code: "api:order:delete", type: 3, path: "/order/:id", method: "DELETE", parent_id: 5 },
+      { name: "修改订单状态接口", code: "api:order:update", type: 3, path: "/order/:id", method: "PATCH", parent_id: 5 },
+      { name: "查询地址接口", code: "api:address:all", type: 3, path: "/address/findAll", method: "POST", parent_id: 6 },
+      
+      // 统计接口 (Dashboard)
+      { name: "首页概览统计接口", code: "api:tj:summary", type: 3, path: "/tj/summary", method: "GET", parent_id: 1 },
+      { name: "用户统计接口", code: "api:tj:user_count", type: 3, path: "/tj/user-count", method: "POST", parent_id: 1 },
+      { name: "商品统计接口", code: "api:tj:goods_count", type: 3, path: "/tj/goods-count", method: "POST", parent_id: 1 },
+      { name: "订单统计接口", code: "api:tj:order_count", type: 3, path: "/tj/order-count", method: "POST", parent_id: 1 },
+
+      // 用户管理更多接口
+      { name: "查询所有用户接口", code: "api:user:all", type: 3, path: "/user/all", method: "POST", parent_id: 2 },
+      { name: "管理员添加用户接口", code: "api:user:add", type: 3, path: "/user/add", method: "POST", parent_id: 2 },
+      { name: "删除用户接口", code: "api:user:delete", type: 3, path: "/user/:id", method: "DELETE", parent_id: 2 },
+
+      // 公告管理接口
+      { name: "查询公告接口", code: "api:notice:list", type: 3, path: "/notice/list", method: "POST", parent_id: 10 },
+      { name: "发布公告接口", code: "api:notice:create", type: 3, path: "/notice", method: "POST", parent_id: 10 },
+      { name: "更新公告接口", code: "api:notice:update", type: 3, path: "/notice/:id", method: "PUT", parent_id: 10 },
+      { name: "删除公告接口", code: "api:notice:delete", type: 3, path: "/notice/:id", method: "DELETE", parent_id: 10 },
+
+      { name: "所有接口权限", code: "api:all", type: 3, path: "*", method: "*", parent_id: 0 },
     ];
 
     const createdPerms = [];
@@ -41,31 +80,35 @@ const seedRBAC = async () => {
       createdPerms.push(perm);
     }
 
-    // 3. 为 Admin 分配所有权限
-    await adminRole.setPermissions(createdPerms);
+    // 动态校准 parent_id 关系
+    const findId = (code) => createdPerms.find(p => p.code === code)?.id || 0;
+    
+    const relations = [
+      { parent: "/dashboard", children: ["api:tj:summary", "api:tj:user_count", "api:tj:goods_count", "api:tj:order_count"] },
+      { parent: "/system", children: ["/system/role", "/system/menu", "/system/notice"] },
+      { parent: "/user_manage", children: ["user:assign_role_btn", "api:user:all", "api:user:add", "api:user:delete"] },
+      { parent: "/goods_manage", children: ["goods:add_btn", "goods:edit_btn", "goods:delete_btn", "api:goods:all", "api:goods:create", "api:goods:update", "api:goods:off", "api:goods:on", "api:goods:removal"] },
+      { parent: "/category_manage", children: ["api:category:all", "api:category:create", "api:category:update", "api:category:delete", "api:category:add_goods", "api:category:remove_goods"] },
+      { parent: "/order_manage", children: ["api:order:all", "api:order:delete", "api:order:update"] },
+      { parent: "/system/notice", children: ["api:notice:list", "api:notice:create", "api:notice:update", "api:notice:delete"] },
+      { parent: "/address_manage", children: ["api:address:all"] },
+    ];
 
-    // 4. 为普通用户分配基础权限 (比如控制台和修改密码)
-    const basicPerms = createdPerms.filter(p => ["/dashboard", "api:user:change-password"].includes(p.code));
-    await userRole.setPermissions(basicPerms);
-
-    // 5. 确保有一个测试用户 (ID: 1) 并分配 Admin 角色
-    let testUser = await User.findByPk(1);
-    if (!testUser) {
-      const hp = await hashPassword("123456");
-      testUser = await User.create({
-        user_name: "admin",
-        password: hp,
-        nick_name: "管理员",
-        email: "admin@example.com",
-        avatar: "http://example.com/avatar.jpg"
-      });
+    for (const rel of relations) {
+      const pId = findId(rel.parent);
+      if (pId) {
+        await Permission.update({ parent_id: pId }, { where: { code: rel.children } });
+      }
     }
-    await testUser.setRoles([adminRole]);
 
-    // 6. 同步到 Casbin
+    // 3. 为 Admin 分配所有权限
+    const allPerms = await Permission.findAll();
+    await adminRole.setPermissions(allPerms);
+
+    // 4. 同步到 Casbin
     await RbacService.syncAllToCasbin();
 
-    console.log("RBAC 物理数据初始化及同步完成！");
+    console.log("RBAC 数据更新完成！");
     process.exit(0);
   } catch (err) {
     console.error("RBAC 初始化失败:", err);

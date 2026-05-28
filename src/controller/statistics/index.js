@@ -1,4 +1,4 @@
-const { userCount,goodsCount,orderCount } = require("../../service/statistics");
+const { userCount,goodsCount,orderCount,getSummary } = require("../../service/statistics");
 class statisticsController {
   /**
    * 获取用户统计数据
@@ -34,6 +34,18 @@ class statisticsController {
     ctx.body = {
       code: 0,
       message: "获取订单统计数据成功",
+      result: res,
+    };
+  }
+
+  /**
+   * 获取首页概览统计数据
+   */
+  async getSummaryStatistics(ctx) {
+    const res = await getSummary();
+    ctx.body = {
+      code: 0,
+      message: "获取概览统计数据成功",
       result: res,
     };
   }

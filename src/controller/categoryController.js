@@ -1,4 +1,4 @@
-const {
+﻿const {
   createCategory,
   updateCategory,
   removeCategory,
@@ -20,9 +20,9 @@ class CategoryController {
     } catch (err) {
       console.error(err);
       ctx.body = {
-        code: "10001",
+        code: 10001,
         message: "创建分类失败",
-        result: err,
+        result: err.message || err,
       };
     }
   }
@@ -39,14 +39,14 @@ class CategoryController {
         };
       } else {
         ctx.body = {
-          code: "10002",
+          code: 10002,
           message: "分类不存在",
         };
       }
     } catch (err) {
       console.error(err);
       ctx.body = {
-        code: "10003",
+        code: 10003,
         message: "修改分类失败",
       };
     }
@@ -64,14 +64,14 @@ class CategoryController {
         };
       } else {
         ctx.body = {
-          code: "10002",
+          code: 10002,
           message: "分类不存在",
         };
       }
     } catch (err) {
       console.error(err);
       ctx.body = {
-        code: "10004",
+        code: 10004,
         message: "删除分类失败",
       };
     }
@@ -88,7 +88,7 @@ class CategoryController {
     } catch (err) {
       console.error(err);
       ctx.body = {
-        code: "10005",
+        code: 10005,
         message: "获取分类列表失败",
       };
     }
@@ -107,7 +107,7 @@ class CategoryController {
     } catch (err) {
       console.error(err);
       ctx.body = {
-        code: "10006",
+        code: 10006,
         message: "获取分类下商品失败",
       };
     }
@@ -125,14 +125,14 @@ class CategoryController {
         };
       } else {
         ctx.body = {
-          code: "10007",
+          code: 10007,
           message: "添加失败，商品或分类不存在",
         };
       }
     } catch (err) {
       console.error(err);
       ctx.body = {
-        code: "10008",
+        code: 10008,
         message: "添加商品到分类失败",
       };
     }
@@ -150,14 +150,14 @@ class CategoryController {
         };
       } else {
         ctx.body = {
-          code: "10007",
+          code: 10007,
           message: "移除失败，商品或分类不存在",
         };
       }
     } catch (err) {
       console.error(err);
       ctx.body = {
-        code: "10009",
+        code: 10009,
         message: "从分类移除商品失败",
       };
     }

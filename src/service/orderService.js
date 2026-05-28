@@ -58,26 +58,23 @@ class OrderService {
     }
   }
 
-  // 查询某个用户下单的商品信息
+  // 查询某个用户下单的商品信息 (如果 user_id 为空则查询所有订单)
   async getUserOrdersWithProducts(user_id, pageNum = 1, pageSize = 10) {
     try {
-      // 查询数据库
       const offset = (pageNum - 1) * pageSize;
+      const whereOpt = user_id ? { user_id } : {};
 
-      const orderCount = await Order.count({
-        where: { user_id },
-      });
-      const { rows } = await Order.findAndCountAll({
-        where: { user_id },
+      const { count, rows } = await Order.findAndCountAll({
+        where: whereOpt,
         offset: offset,
-        limit: pageSize,
+        limit: +pageSize,
         order: [["createdAt", "DESC"]],
         include: [
           {
-            model: OrderItem, // 包含订单项
+            model: OrderItem,
             include: [
               {
-                model: Goods, // 包含商品信息
+                model: Goods,
                 as: "product",
               },
             ],
@@ -86,15 +83,13 @@ class OrderService {
             model: Address,
           },
         ],
+        distinct: true,
       });
 
-      // 确保返回的页码和总页数正确
-      const totalPages = Math.ceil(orderCount / pageSize);
-      pageNum = Math.min(pageNum, totalPages);
       return {
-        pageNum,
-        pageSize,
-        total: totalPages,
+        pageNum: +pageNum,
+        pageSize: +pageSize,
+        total: count,
         list: rows,
       };
     } catch (error) {
@@ -102,15 +97,17 @@ class OrderService {
     }
   }
 
-  async deleteOrderById(order_id, transaction) {
+  async deleteOrderById(id, transaction) {
     try {
+      // 先删除订单项
       await OrderItem.destroy({
-        where: { order_id },
+        where: { order_id: id },
         transaction,
       });
 
+      // 再删除订单
       const res = await Order.destroy({
-        where: { order_id },
+        where: { id },
         transaction,
       });
 
@@ -120,17 +117,17 @@ class OrderService {
     }
   }
 
-  async updateOrderStatus(id) {
+  async updateOrderStatus(id, status) {
     try {
       const res = await Order.findByPk(id);
       if (res) {
-        res.state = 1;
+        res.state = status;
         await res.save();
         return res;
       }
-      return res;
+      return null;
     } catch (error) {
-      throw error; // 抛出错误
+      throw error;
     }
   }
   /**

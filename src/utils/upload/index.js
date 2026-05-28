@@ -22,9 +22,10 @@ const deleteOnlineImgs = async (file) => {
       }
 
       fileNmae.forEach((item) => {
+        const subDir = UPLOAD_TYPE === "local" ? "local" : "online";
         const filePath = path.resolve(
           __dirname,
-          `../../public/${UPLOAD_TYPE}/${item}`
+          `../../public/${subDir}/${item}`
         );
 
         // 使用 fs.unlink 进行异步删除

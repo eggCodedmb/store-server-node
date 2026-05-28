@@ -7,6 +7,7 @@ const {
   queryUserInfo,
   getAllUser,
   changeUser,
+  deleteUser,
   getPermissions,
   wechatLogin,
 } = require("../controller/userController");
@@ -103,6 +104,9 @@ router.post("/", auth, authorize("/user/", "POST"), queryUserInfo);
 // 查询所有用户
 // 使用 Casbin 权限校验替代简单的 verifAdmin
 router.post("/all", auth, authorize("/user/all", "POST"), getAllUser);
+
+// 删除用户
+router.delete("/:id", auth, authorize("/user/:id", "DELETE"), deleteUser);
 
 // 刷新token接口
 router.post("/refresh_token", refreshToken);

@@ -122,4 +122,21 @@ CREATE TABLE `users`  (
   UNIQUE INDEX `user_emil`(`user_emil`) USING BTREE
 ) ENGINE = InnoDB AUTO_INCREMENT = 2 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci COMMENT = '用户表' ROW_FORMAT = Dynamic;
 
+-- ----------------------------
+-- Table structure for notices
+-- ----------------------------
+DROP TABLE IF EXISTS `notices`;
+CREATE TABLE `notices`  (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `title` varchar(255) NOT NULL COMMENT '公告标题',
+  `content` text NOT NULL COMMENT '公告内容',
+  `type` tinyint(4) NOT NULL DEFAULT 1 COMMENT '公告类型 (1: 通知, 2: 公告, 3: 活动)',
+  `status` tinyint(1) NOT NULL DEFAULT 1 COMMENT '状态 (true: 发布, false: 隐藏)',
+  `author` varchar(255) NULL DEFAULT NULL COMMENT '发布者',
+  `icon` varchar(255) NULL DEFAULT NULL COMMENT '公告图标',
+  `createdAt` datetime NOT NULL,
+  `updatedAt` datetime NOT NULL,
+  PRIMARY KEY (`id`) USING BTREE
+) ENGINE = InnoDB AUTO_INCREMENT = 1 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci COMMENT = '系统公告表' ROW_FORMAT = Dynamic;
+
 SET FOREIGN_KEY_CHECKS = 1;
