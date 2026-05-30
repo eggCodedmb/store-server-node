@@ -11,3 +11,4 @@ src/public/local/*.jpg
 src/public/minio/*.png
 src/public/minio/*.jpeg
 src/public/minio/*.jpg
+.vercel

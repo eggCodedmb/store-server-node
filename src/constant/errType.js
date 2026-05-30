@@ -235,6 +235,10 @@ module.exports = {
     code: "10505",
     message: "订单有误",
   },
+  orderExpiredError: {
+    code: "10506",
+    message: "订单已过期或已取消，无法支付",
+  },
   // 限流错误类型
   limitError: {
     code: "10601",

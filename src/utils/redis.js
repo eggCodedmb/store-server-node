@@ -9,10 +9,10 @@ let retryCount = 1;
 const maxRetries = 5;
 
 const client = redis.createClient({
-  host: REDIS_HOST,
-  port: REDIS_PORT,
   password: REDIS_PASSWORD,
   socket: {
+    host: REDIS_HOST,
+    port: parseInt(REDIS_PORT, 10),
     reconnectStrategy(retries) {
       retryCount = retries + 1;
       if (retryCount >= maxRetries) {
@@ -46,7 +46,7 @@ const setData = async (key, data, time = null) => {
   if (!client.isOpen) await client.connect(); // 确保客户端连接
   data = JSON.stringify(data);
   if (time) {
-    await client.set(key, data, "EX", time);
+    await client.set(key, data, { EX: time });
   } else {
     await client.set(key, data);
   }
@@ -80,6 +80,29 @@ const delKeyAll = async (key) => {
   }
 };
 
+const { getBeijingDateStr } = require("./index");
+
+/**
+ * 获取自增取餐码，24小时后重置
+ * @returns {Promise<Number>}
+ */
+const getNextPickupCode = async () => {
+  if (!client.isOpen) await client.connect();
+  
+  // 从网络获取准确的日期字符串，确保 00:00 重置
+  const dateStr = await getBeijingDateStr();
+
+  const key = `pickup_code_sequence:${dateStr}`;
+  const code = await client.incr(key);
+
+  // 设置 25 小时过期，确保当天有效且之后自动清理
+  if (code === 1) {
+    await client.expire(key, 25 * 60 * 60);
+  }
+
+  return code;
+};
+
 // 关闭 Redis 客户端
 const closeClient = () => {
   client.quit((err) => {
@@ -103,5 +126,8 @@ module.exports = {
   getData,
   delKey,
   delKeyAll,
+  getNextPickupCode,
   closeClient,
 };
+
+

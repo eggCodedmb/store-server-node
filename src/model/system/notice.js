@@ -41,6 +41,11 @@ const Notice = seq.define(
       allowNull: true,
       comment: "公告图标",
     },
+    store_id: {
+      type: DataTypes.INTEGER,
+      allowNull: true,
+      comment: "所属门店ID (NULL 表示全店公告)",
+    },
   },
   {
     timestamps: true,

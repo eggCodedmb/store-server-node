@@ -1,6 +1,7 @@
 const Category = require("../model/product/category");
 const Goods = require("../model/product/goods");
 const { Op } = require("sequelize");
+const sequelize = require("../db/seq");
 
 class CategoryService {
   /**
@@ -30,8 +31,27 @@ class CategoryService {
   /**
    * 获取分类列表
    */
-  async findAllCategories() {
-    return await Category.findAll();
+  async findAllCategories(storeId) {
+    const whereOpt = {};
+    if (storeId) {
+      const { Goods } = require("../model/index");
+      whereOpt.id = {
+        [Op.in]: sequelize.literal(`(
+          SELECT DISTINCT category_id 
+          FROM goods_category 
+          JOIN goods ON goods.id = goods_category.goods_id 
+          WHERE goods.store_id = ${sequelize.escape(storeId)}
+        )`),
+      };
+    }
+
+    return await Category.findAll({
+      where: whereOpt,
+      order: [
+        ["order_num", "ASC"],
+        ["createdAt", "DESC"],
+      ],
+    });
   }
 
   /**
@@ -44,19 +64,28 @@ class CategoryService {
   /**
    * 获取分类下商品
    */
-  async findGoodsByCategory(categoryId, pageNum = 1, pageSize = 10) {
+  async findGoodsByCategory(categoryId, pageNum = 1, pageSize = 10, storeId = "") {
     const offset = (pageNum - 1) * pageSize;
+    const { Category } = require("../model/index");
+    
+    const whereOpt = {};
+    if (storeId) {
+      whereOpt.store_id = storeId;
+    }
+
     const { count, rows } = await Goods.findAndCountAll({
+      where: whereOpt,
       include: [
         {
           model: Category,
           where: { id: categoryId },
-          attributes: [],
           through: { attributes: [] },
+          required: true,
         },
       ],
       offset: +offset,
       limit: +pageSize,
+      distinct: true,
     });
 
     return {

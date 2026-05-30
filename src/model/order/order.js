@@ -21,7 +21,7 @@ const Order = seq.define(
     },
     address_id: {
       type: DataTypes.INTEGER,
-      allowNull: false,
+      allowNull: true,
       comment: "地址id",
     },
     total_price: {
@@ -30,7 +30,7 @@ const Order = seq.define(
       comment: "订单总价",
     },
     order_number: {
-      type: DataTypes.STRING(16),
+      type: DataTypes.STRING(32),
       allowNull: false,
       comment: "订单编号",
     },
@@ -38,6 +38,17 @@ const Order = seq.define(
       type: DataTypes.TINYINT,
       allowNull: false,
       comment: "订单状态",
+    },
+    order_type: {
+      type: DataTypes.TINYINT,
+      allowNull: false,
+      defaultValue: 1,
+      comment: "订单类型 (1: 自提, 2: 外卖)",
+    },
+    pickup_code: {
+      type: DataTypes.STRING(20),
+      allowNull: true,
+      comment: "取餐码",
     },
   },
   {

@@ -17,10 +17,20 @@ class NoticeService {
     return res > 0;
   }
 
-  async findAllNotice(pageSize = 10, pageNum = 1, title = "") {
+  async findAllNotice(pageSize = 10, pageNum = 1, title = "", storeId = "") {
     const offset = (pageNum - 1) * pageSize;
-    const whereOpt = title ? { title: { [Op.like]: `%${title}%` } } : {};
+    const whereOpt = {};
+    if (title) {
+      whereOpt.title = { [Op.like]: `%${title}%` };
+    }
     
+    if (storeId) {
+      whereOpt[Op.or] = [
+        { store_id: storeId },
+        { store_id: null }
+      ];
+    }
+
     const { count, rows } = await Notice.findAndCountAll({
       where: whereOpt,
       offset: +offset,

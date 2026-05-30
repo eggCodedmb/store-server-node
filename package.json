@@ -5,14 +5,18 @@
   "scripts": {
     "dev": "nodemon ./src/main.js",
     "start": "node ./src/main.js",
+    "prod": "set NODE_ENV=production&& node ./src/main.js",
     "test": "echo \"Error: no test specified\" && exit 1",
-    "build": "webpack"
+    "build": "webpack",
+    "backup": "node ./src/db/backup.js",
+    "backup:watch": "node ./src/db/backup.js --schedule"
   },
   "type": "commonjs",
   "author": "",
   "license": "ISC",
   "description": "",
   "dependencies": {
+    "axios": "^1.16.1",
     "bcrypt": "^5.1.1",
     "bull": "^4.16.0",
     "casbin": "^5.50.0",

@@ -40,6 +40,11 @@ const OrderItem = seq.define(
       allowNull: false,
       comment: "商品价格",
     },
+    specs: {
+      type: DataTypes.STRING,
+      allowNull: true,
+      comment: "规格快照 (JSON 或字符串)",
+    },
   },
   {
     timestamps: true, // 开启 Sequelize 自动添加的时间戳

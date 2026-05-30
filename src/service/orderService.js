@@ -24,8 +24,9 @@ class OrderService {
       const orderItemsData = orderItems.map((item) => ({
         order_id: res.id,
         goods_id: +item.id,
-        price: item.goods_price,
+        price: item.price || item.goods_price || 0, // 兼容新旧接口的 price 字段
         quantity: item.quantity,
+        specs: item.specs || null // 兼容新接口的 specs 字段
       }));
 
       const orderService = new OrderService();
@@ -59,10 +60,23 @@ class OrderService {
   }
 
   // 查询某个用户下单的商品信息 (如果 user_id 为空则查询所有订单)
-  async getUserOrdersWithProducts(user_id, pageNum = 1, pageSize = 10) {
+  async getUserOrdersWithProducts(user_id, pageNum = 1, pageSize = 10, filters = {}) {
     try {
       const offset = (pageNum - 1) * pageSize;
       const whereOpt = user_id ? { user_id } : {};
+
+      // 添加额外的过滤条件
+      if (filters.order_type && filters.order_type !== "") {
+        whereOpt.order_type = filters.order_type;
+      }
+      if (filters.order_number && filters.order_number !== "") {
+        whereOpt.order_number = {
+          [Op.like]: `%${filters.order_number}%`,
+        };
+      }
+      if (filters.state !== undefined && filters.state !== "" && filters.state !== null) {
+        whereOpt.state = filters.state;
+      }
 
       const { count, rows } = await Order.findAndCountAll({
         where: whereOpt,
@@ -121,6 +135,25 @@ class OrderService {
     try {
       const res = await Order.findByPk(id);
       if (res) {
+        // 如果尝试更新为已支付 (1)，但订单已经是取消状态 (4)
+        if (status === 1 && res.state === 4) {
+          const { orderExpiredError } = require("../constant/errType");
+          throw orderExpiredError;
+        }
+
+        // 如果是更新为已支付状态 (1) 且是自提订单 (1) 且还没有取餐码
+        if (status === 1 && res.order_type === 1 && !res.pickup_code) {
+          const { getNextPickupCode } = require("../utils/redis");
+          const code = await getNextPickupCode();
+          res.pickup_code = "A" + code.toString().padStart(3, "0");
+        }
+
+        // 如果状态不再是待支付 (0)，则删除 Redis 中的超时键
+        if (status !== 0) {
+          const { delKey } = require("../utils/redis");
+          await delKey(`order_timeout:${id}`);
+        }
+
         res.state = status;
         await res.save();
         return res;

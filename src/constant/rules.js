@@ -2,7 +2,7 @@
 const emilRules =
   /^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
 
-// 新的邮箱规则
+// 新新的邮箱规则
 const newEmailRules = /^([a-zA-Z0-9_-])+@([a-zA-Z0-9_-])+(.[a-zA-Z0-9_-])+/;
 module.exports = {
   // registerRules: {
@@ -128,6 +128,16 @@ module.exports = {
       description:
         "商品图片链接，必须是有效的 URL 地址，并且是图片格式（jpg, jpeg, png, gif）",
     },
+    goods_detail: {
+      type: "string",
+      required: false,
+      description: "商品详情介绍，可选字符串",
+    },
+    specs: {
+      type: "array",
+      required: false,
+      description: "商品规格数组",
+    },
   },
   // 用户地址
   addressFormatRules: {
@@ -146,6 +156,22 @@ module.exports = {
       type: "string",
       required: true, // 地址也是必填项
       minLength: 2, // 地址至少要有一个字符
+    },
+    area_name: {
+      type: "string",
+      required: true,
+      description: "所在地区名称，必填",
+    },
+    area_code: {
+      type: "string",
+      required: true,
+      description: "所在地区代码，必填",
+    },
+    tag: {
+      type: "integer",
+      required: false,
+      enum: [0, 1, 2],
+      description: "标签（0：家、1：公司、2：学校）",
     },
   },
 

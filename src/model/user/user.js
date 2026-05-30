@@ -50,6 +50,11 @@ const User = seq.define(
       unique: true,
       comment: "微信unionid",
     },
+    store_id: {
+      type: DataTypes.INTEGER,
+      allowNull: true,
+      comment: "所属门店(部门)ID",
+    },
   },
   {
     timestamps: true, // 关闭 Sequelize 自动添加的时间戳

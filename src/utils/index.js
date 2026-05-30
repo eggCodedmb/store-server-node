@@ -1,4 +1,33 @@
+const axios = require("axios");
+
 class UtilsClass {
+  // ... (previous methods)
+
+  /**
+   * 获取北京时间的日期字符串 (YYYY-MM-DD)
+   * 优先从网络 API 获取，失败则回退到本地系统时间
+   */
+  async getBeijingDateStr() {
+    try {
+      // 使用苏宁提供的公共时间接口 (中国境内访问较快)
+      const response = await axios.get("https://quan.suning.com/getSysTime.do", { timeout: 2000 });
+      if (response.data && response.data.sysTime2) {
+        // 格式为 "2024-05-30 18:06:45"，取前 10 位
+        return response.data.sysTime2.substring(0, 10);
+      }
+    } catch (error) {
+      console.error("网络获取时间失败，回退到系统时间:", error.message);
+    }
+
+    // 回退方案：使用本地系统时间转换为北京时间
+    return new Intl.DateTimeFormat('en-CA', {
+      timeZone: 'Asia/Shanghai',
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit'
+    }).format(new Date());
+  }
+
   // 深度克隆函数
   deepClone(obj) {
     if (obj == null || typeof obj !== "object") {

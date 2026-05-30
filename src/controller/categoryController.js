@@ -79,7 +79,8 @@ class CategoryController {
 
   async findAll(ctx) {
     try {
-      const res = await findAllCategories();
+      const { storeId = "" } = ctx.request.query;
+      const res = await findAllCategories(storeId);
       ctx.body = {
         code: 0,
         message: "获取分类列表成功",
@@ -97,8 +98,8 @@ class CategoryController {
   async getGoods(ctx) {
     try {
       const categoryId = ctx.params.id;
-      const { pageNum = 1, pageSize = 10 } = ctx.request.query;
-      const res = await findGoodsByCategory(categoryId, pageNum, pageSize);
+      const { pageNum = 1, pageSize = 10, storeId = "" } = ctx.request.query;
+      const res = await findGoodsByCategory(categoryId, pageNum, pageSize, storeId);
       ctx.body = {
         code: 0,
         message: "获取分类下商品成功",

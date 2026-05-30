@@ -31,6 +31,12 @@ const Category = seq.define(
       allowNull: true,
       Comment: "分类描述",
     },
+    order_num: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+      defaultValue: 0,
+      comment: "显示顺序",
+    },
   },
   {
     timestamps: true, // 自动添加createdAt和updatedAt字段

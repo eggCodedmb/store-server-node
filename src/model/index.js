@@ -6,12 +6,18 @@ const Order = require("./order/order");
 const OrderItem = require("./order/orderItem");
 const Category = require("./product/category");
 const GoodsCategory = require("./product/goodsAndCategory");
+const SpecGroup = require("./product/specGroup");
+const SpecOption = require("./product/specOption");
+const Topping = require("./product/topping");
+const ProductSpecRel = require("./product/productSpecRel");
 const Notice = require("./system/notice");
+const Store = require("./store/store");
 
 // RBAC Models
 const Role = require("./rbac/Role");
 const Permission = require("./rbac/Permission");
 const { UserRole, RolePermission } = require("./rbac/Mapping");
+const UserStore = require("./user/UserStore");
 
 // 用户和订单关联关系
 User.hasMany(Order, { foreignKey: "user_id" });
@@ -55,6 +61,20 @@ Category.belongsToMany(Goods, {
   foreignKey: "category_id",
 });
 
+// 规格组和规格选项关联关系
+SpecGroup.hasMany(SpecOption, { foreignKey: "group_id" });
+SpecOption.belongsTo(SpecGroup, { foreignKey: "group_id" });
+
+// 商品和规格组关联关系 (多对多)
+Goods.belongsToMany(SpecGroup, {
+  through: ProductSpecRel,
+  foreignKey: "product_id",
+});
+SpecGroup.belongsToMany(Goods, {
+  through: ProductSpecRel,
+  foreignKey: "group_id",
+});
+
 /**
  * RBAC 关联关系
  */
@@ -66,8 +86,29 @@ Role.belongsToMany(User, { through: UserRole, foreignKey: "roleId" });
 Role.belongsToMany(Permission, { through: RolePermission, foreignKey: "roleId" });
 Permission.belongsToMany(Role, { through: RolePermission, foreignKey: "permissionId" });
 
+// 用户和门店关联关系
+User.hasMany(Store, { foreignKey: "user_id" });
+Store.belongsTo(User, { foreignKey: "user_id" });
+
+// 用户所属门店(部门)关联关系 (多对多)
+User.belongsToMany(Store, {
+  through: UserStore,
+  foreignKey: "userId",
+  as: "departments",
+});
+Store.belongsToMany(User, {
+  through: UserStore,
+  foreignKey: "storeId",
+});
+
+// 门店和商品关联关系
+Store.hasMany(Goods, { foreignKey: "store_id" });
+Goods.belongsTo(Store, { foreignKey: "store_id" });
+
 module.exports = {
   User,
+  Store,
+  UserStore,
   Goods,
   Cart,
   Address,
@@ -79,5 +120,9 @@ module.exports = {
   RolePermission,
   Category,
   GoodsCategory,
+  SpecGroup,
+  SpecOption,
+  Topping,
+  ProductSpecRel,
   Notice,
 };

@@ -24,8 +24,9 @@ class AddressController {
   async create(ctx) {
     try {
       const user_id = ctx.state.user.id;
-      const { consignee, phone, address } = ctx.request.body;
-      const data = { user_id, consignee, phone, address };
+      const { consignee, phone, address, area_name, area_code, tag } =
+        ctx.request.body;
+      const data = { user_id, consignee, phone, address, area_name, area_code, tag };
       const { updatedAt, createdAt, ...res } = await addressCreate(data);
       ctx.body = {
         code: 0,

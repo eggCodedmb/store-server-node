@@ -8,10 +8,25 @@ class UserService {
    * @returns {Promise<Object>} - 返回新创建用户的数据
    */
   async createUser(user) {
-    // 插入数据到数据库
-    const res = await User.create(user);
-    // 返回新创建用户的数据
-    return res.dataValues;
+    const { store_ids, ...userData } = user || {};
+    const seq = require("../db/seq");
+    const { Store } = require("../model/index");
+    
+    const transaction = await seq.transaction();
+    try {
+      // 插入数据到数据库
+      const newUser = await User.create(userData, { transaction });
+      
+      if (store_ids && Array.isArray(store_ids)) {
+        await newUser.setDepartments(store_ids, { transaction });
+      }
+      
+      await transaction.commit();
+      return newUser.dataValues;
+    } catch (error) {
+      await transaction.rollback();
+      throw error;
+    }
   }
 
   /**
@@ -33,11 +48,20 @@ class UserService {
     if (Object.keys(whereOpt).length === 0) return;
 
     // 查询用户信息
+    const { Store } = require("../model/index");
     const res = await User.findOne({
       where: whereOpt,
+      include: [
+        {
+          model: Store,
+          as: "departments",
+          attributes: ["id", "name"],
+          through: { attributes: [] },
+        },
+      ],
     });
     // 返回查询结果
-    return res?.dataValues || null;
+    return res ? res.toJSON() : null;
   }
 
   /**
@@ -69,20 +93,34 @@ class UserService {
    * @returns {Promise<boolean>} 返回更新是否成功
    */
   async updateById(id, data) {
-    const { email, avatar, nick_name, password } = data || {};
+    const { email, avatar, nick_name, password, store_ids } = data || {};
+    const seq = require("../db/seq");
+    const transaction = await seq.transaction();
 
-    // 条件查询构建（自动忽略 undefined 的值）
-    const userData = {
-      ...(email && { email }),
-      ...(avatar && { avatar }),
-      ...(nick_name && { nick_name }),
-      ...(password && { password }),
-    };
-    // 更新用户信息，返回更新操作的结果
-    const res = await User.update(userData, { where: { id } });
+    try {
+      // 条件查询构建（自动忽略 undefined 的值）
+      const userData = {
+        ...(email && { email }),
+        ...(avatar && { avatar }),
+        ...(nick_name && { nick_name }),
+        ...(password && { password }),
+      };
+      
+      await User.update(userData, { where: { id }, transaction });
 
-    // 判断更新是否成功
-    return res[0] > 0;
+      if (store_ids && Array.isArray(store_ids)) {
+        const user = await User.findByPk(id, { transaction });
+        if (user) {
+          await user.setDepartments(store_ids, { transaction });
+        }
+      }
+
+      await transaction.commit();
+      return true;
+    } catch (error) {
+      await transaction.rollback();
+      throw error;
+    }
   }
 
   /**
@@ -93,6 +131,7 @@ class UserService {
    */
   async findAllUser(pageSize = 20, pageNum = 1) {
     try {
+      const { Store } = require("../model/index");
       const offset = (pageNum - 1) * pageSize;
       const { count, rows } = await User.findAndCountAll({
         attributes: { exclude: ["password"] },
@@ -100,6 +139,12 @@ class UserService {
           {
             model: Role,
             attributes: ["id", "role_name", "role_key"],
+            through: { attributes: [] },
+          },
+          {
+            model: Store,
+            as: "departments",
+            attributes: ["id", "name"],
             through: { attributes: [] },
           },
         ],

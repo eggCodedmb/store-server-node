@@ -33,6 +33,22 @@ const Address = seq.define(
       allowNull: false,
       comment: "地址",
     },
+    area_name: {
+      type: DataTypes.STRING,
+      allowNull: false,
+      comment: "所在地区名称",
+    },
+    area_code: {
+      type: DataTypes.STRING(100),
+      allowNull: false,
+      comment: "所在地区代码",
+    },
+    tag: {
+      type: DataTypes.TINYINT,
+      allowNull: false,
+      defaultValue: 0,
+      comment: "标签（0：家、1：公司、2：学校）",
+    },
     is_default: {
       type: DataTypes.BOOLEAN,
       allowNull: false,

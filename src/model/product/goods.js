@@ -35,17 +35,27 @@ const Goods = seq.define(
       },
       Comment: "商品数量",
     },
+    store_id: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+      comment: "所属门店ID",
+    },
     goods_img: {
       type: DataTypes.STRING,
       allowNull: true, // 图片可以为空
       Comment: "商品图片",
+    },
+    goods_detail: {
+      type: DataTypes.TEXT,
+      allowNull: true,
+      comment: "商品详情介绍",
     },
   },
   {
     timestamps: true, // 自动添加createdAt和updatedAt字段
     comment: "商品表", // 表的注释
     tableName: "goods",
-    paranoid: true, // 启用软删除
+    paranoid: false, // 关闭软删除，DB中没有deletedAt
   }
 );
 

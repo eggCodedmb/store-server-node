@@ -36,7 +36,16 @@ class AddressService {
     try {
       const res = await Address.findAll({
         where: { user_id: user_id },
-        attributes: ["id", "address", "consignee", "phone", "is_default"],
+        attributes: [
+          "id",
+          "address",
+          "consignee",
+          "phone",
+          "is_default",
+          "area_name",
+          "area_code",
+          "tag",
+        ],
       });
       return res;
     } catch (error) {

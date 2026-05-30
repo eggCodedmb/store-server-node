@@ -9,6 +9,7 @@
   queryNewGoogdsAll,
   getGoodsWithTotalSales,
   getProductById,
+  getGoodsDetailById,
 } = require("../service/goodsService");
 const { publishGoodsError, invalidGoodsID } = require("../constant/errType");
 const Goods = require("../model/product/goods");
@@ -76,8 +77,8 @@ class GoodsController {
 
   async getRemove(ctx) {
     try {
-      const { pageNum = 1, pageSize = 10 } = ctx.request.query;
-      const res = await getRemoveGoods(pageNum, pageSize);
+      const { pageNum = 1, pageSize = 10, storeId = "" } = ctx.request.query;
+      const res = await getRemoveGoods(pageNum, pageSize, storeId);
       ctx.body = { code: 0, message: "获取下架商品成功", result: res };
     } catch (error) {
       console.log(error);
@@ -86,8 +87,8 @@ class GoodsController {
 
   async findGoodsByName(ctx) {
     try {
-      const { name } = ctx.request.query;
-      const res = await searchGoodsByName(name);
+      const { name, storeId = "" } = ctx.request.query;
+      const res = await searchGoodsByName(name, 10, storeId);
       ctx.body = { code: 0, message: "查询成功", result: res };
     } catch (error) {
       console.log(error);
@@ -96,8 +97,8 @@ class GoodsController {
 
   async queryNewGoods(ctx) {
     try {
-      const { pageNum = 1, pageSize = 10 } = ctx.request.query;
-      const res = await queryNewGoogdsAll(pageNum, pageSize);
+      const { pageNum = 1, pageSize = 10, storeId = "" } = ctx.request.query;
+      const res = await queryNewGoogdsAll(pageNum, pageSize, storeId);
       ctx.body = { code: 0, message: "查询成功", result: res };
     } catch (error) {
       console.log(error);
@@ -106,8 +107,8 @@ class GoodsController {
 
   async querySalesGoods(ctx) {
     try {
-      const { pageNum = 1, pageSize = 10, order = "ASC" } = ctx.request.query;
-      const res = await getGoodsWithTotalSales(pageNum, pageSize, order);
+      const { pageNum = 1, pageSize = 10, order = "ASC", storeId = "" } = ctx.request.query;
+      const res = await getGoodsWithTotalSales(pageNum, pageSize, order, storeId);
       ctx.body = { code: 0, message: "查询成功", result: res };
     } catch (error) {
       console.log(error);
@@ -121,6 +122,20 @@ class GoodsController {
       ctx.body = { code: 0, message: "查询成功", result: res };
     } catch (error) {
       console.log(error);
+    }
+  }
+
+  async getDetail(ctx) {
+    try {
+      const { id } = ctx.params;
+      const res = await getGoodsDetailById(id);
+      if (res) {
+        ctx.body = { code: 0, message: "获取商品详情成功", result: res };
+      } else {
+        ctx.app.emit("error", invalidGoodsID, ctx);
+      }
+    } catch (error) {
+      console.error(error);
     }
   }
 }

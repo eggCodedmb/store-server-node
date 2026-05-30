@@ -21,17 +21,18 @@ const seedRBAC = async () => {
       { name: "商品管理", code: "/goods_manage", type: 1, parent_id: 0 },
       { name: "订单管理", code: "/order_manage", type: 1, parent_id: 0 },
       { name: "地址管理", code: "/address_manage", type: 1, parent_id: 0 },
+      { name: "门店管理", code: "/store_manage", type: 1, parent_id: 0 },
       { name: "系统管理", code: "/system", type: 1, parent_id: 0 },
-      { name: "角色管理", code: "/system/role", type: 1, parent_id: 7 }, // 根据顺序更新ID
-      { name: "菜单管理", code: "/system/menu", type: 1, parent_id: 7 },
-      { name: "公告管理", code: "/system/notice", type: 1, parent_id: 7 },
+      { name: "角色管理", code: "/system/role", type: 1, parent_id: 8 }, // 根据顺序更新ID
+      { name: "菜单管理", code: "/system/menu", type: 1, parent_id: 8 },
+      { name: "公告管理", code: "/system/notice", type: 1, parent_id: 8 },
       
       // 按钮 (Type: 2)
       { name: "添加商品按钮", code: "goods:add_btn", type: 2, parent_id: 4 },
       { name: "编辑商品按钮", code: "goods:edit_btn", type: 2, parent_id: 4 },
       { name: "下架商品按钮", code: "goods:delete_btn", type: 2, parent_id: 4 },
       { name: "权限分配按钮", code: "user:assign_role_btn", type: 2, parent_id: 2 },
-      { name: "分配权限按钮", code: "role:assign_perm_btn", type: 2, parent_id: 8 },
+      { name: "分配权限按钮", code: "role:assign_perm_btn", type: 2, parent_id: 9 }, // system/role 的 id 是 9
       
       // 接口 (Type: 3)
       { name: "查询商品接口", code: "api:goods:all", type: 3, path: "/goods/", method: "GET", parent_id: 4 },
@@ -50,6 +51,10 @@ const seedRBAC = async () => {
       { name: "删除订单接口", code: "api:order:delete", type: 3, path: "/order/:id", method: "DELETE", parent_id: 5 },
       { name: "修改订单状态接口", code: "api:order:update", type: 3, path: "/order/:id", method: "PATCH", parent_id: 5 },
       { name: "查询地址接口", code: "api:address:all", type: 3, path: "/address/findAll", method: "POST", parent_id: 6 },
+      { name: "查询门店接口", code: "api:store:all", type: 3, path: "/store/list", method: "GET", parent_id: 7 },
+      { name: "创建门店接口", code: "api:store:create", type: 3, path: "/store", method: "POST", parent_id: 7 },
+      { name: "更新门店接口", code: "api:store:update", type: 3, path: "/store/:id", method: "PUT", parent_id: 7 },
+      { name: "删除门店接口", code: "api:store:delete", type: 3, path: "/store/:id", method: "DELETE", parent_id: 7 },
       
       // 统计接口 (Dashboard)
       { name: "首页概览统计接口", code: "api:tj:summary", type: 3, path: "/tj/summary", method: "GET", parent_id: 1 },
@@ -92,6 +97,7 @@ const seedRBAC = async () => {
       { parent: "/order_manage", children: ["api:order:all", "api:order:delete", "api:order:update"] },
       { parent: "/system/notice", children: ["api:notice:list", "api:notice:create", "api:notice:update", "api:notice:delete"] },
       { parent: "/address_manage", children: ["api:address:all"] },
+      { parent: "/store_manage", children: ["api:store:all", "api:store:create", "api:store:update", "api:store:delete"] },
     ];
 
     for (const rel of relations) {

@@ -7,12 +7,33 @@ const {
   deleteOrder,
   updateStatus,
   getOneOrder,
+  create_new,
+  pay_order,
+  getMyOrders,
 } = require("../controller/orderController");
 const { orderInfoRules } = require("../constant/rules");
 const { orderFormError } = require("../constant/errType");
 
 const router = new Router({ prefix: "/order" });
 
+// 益禾堂小程序新接口
+router.post("/create_new", auth, create_new);
+router.post("/pay", auth, pay_order);
+router.get("/my_list", auth, getMyOrders);
+
+router.get(
+  "/detail",
+  validateParams(
+    {
+      id: { type: "integer", required: true },
+    },
+    orderFormError
+  ),
+  auth,
+  getOneOrder
+);
+
+// 老接口保留
 router.post(
   "/create",
   validateParams(orderInfoRules, orderFormError),
