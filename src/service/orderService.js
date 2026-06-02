@@ -184,7 +184,7 @@ class OrderService {
                   goods_name: {
                     [Op.like]: `%${name}%`,
                   },
-                  deletedAt: null,
+                  status: 1,
                 },
               },
             ],

@@ -50,6 +50,12 @@ const Goods = seq.define(
       allowNull: true,
       comment: "商品详情介绍",
     },
+    status: {
+      type: DataTypes.TINYINT,
+      allowNull: false,
+      defaultValue: 1,
+      comment: "商品状态 1-上架中 0-已下架",
+    },
   },
   {
     timestamps: true, // 自动添加createdAt和updatedAt字段

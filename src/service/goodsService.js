@@ -232,7 +232,7 @@ class GoodsService {
   async getRemoveGoods(pageNum = 1, pageSize = 10, storeId = "") {
     try {
       const offset = (pageNum - 1) * pageSize;
-      const whereOpt = { deletedAt: { [Op.not]: null } };
+      const whereOpt = { status: 0 };
       if (storeId) {
         if (Array.isArray(storeId)) {
           whereOpt.store_id = { [Op.in]: storeId };
@@ -244,7 +244,6 @@ class GoodsService {
       }
       const { count, rows } = await Goods.findAndCountAll({
         where: whereOpt,
-        paranoid: false,
         offset: +offset,
         limit: +pageSize,
       });
@@ -265,6 +264,7 @@ class GoodsService {
           "goods_img",
           "goods_detail",
           "store_id",
+          "status",
         ],
         where: { id: { [Op.in]: arr } },
       });
@@ -276,7 +276,7 @@ class GoodsService {
 
   async searchGoodsByName(name, number = 10, storeId = "") {
     try {
-      const whereOpt = { goods_name: { [Op.like]: `%${name}%` }, deletedAt: null };
+      const whereOpt = { goods_name: { [Op.like]: `%${name}%` }, status: 1 };
       if (storeId) {
         if (Array.isArray(storeId)) {
           whereOpt.store_id = { [Op.in]: storeId };
@@ -300,7 +300,7 @@ class GoodsService {
   async queryNewGoogdsAll(pageNum = 1, pageSize = 10, storeId = "") {
     try {
       const offset = (pageNum - 1) * pageSize;
-      const whereOpt = {};
+      const whereOpt = { status: 1 };
       if (storeId) {
         if (Array.isArray(storeId)) {
           whereOpt.store_id = { [Op.in]: storeId };
@@ -330,7 +330,7 @@ class GoodsService {
         SELECT goods.*, COALESCE(SUM(order_items.quantity), 0) AS totalSales
         FROM goods
         LEFT JOIN order_items ON goods.id = order_items.goods_id
-        WHERE goods.deletedAt IS NULL
+        WHERE goods.status = 1
       `;
       if (storeId) {
         if (Array.isArray(storeId)) {
