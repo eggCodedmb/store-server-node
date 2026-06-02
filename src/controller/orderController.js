@@ -7,6 +7,7 @@ const {
   findOrderById,
 } = require("../service/orderService");
 const { queryDefaultAddress } = require("../service/addressService");
+const settlementService = require("../service/settlementService");
 const {
   creatOrderError,
   deleteOrderError,
@@ -16,57 +17,74 @@ const {
 const GenId = require("../utils/IdGenerator");
 class OrderController {
   /**
+   * 价格预览/试算接口 (后端作为唯一真理)
+   */
+  async calculate(ctx) {
+    try {
+      const { items } = ctx.request.body;
+      if (!items || items.length === 0) {
+        throw new Error("结算商品不能为空");
+      }
+      const res = await settlementService.calculateFinalPrice(items);
+      ctx.body = {
+        code: 0,
+        message: "计算成功",
+        result: res,
+      };
+    } catch (error) {
+      console.error(error);
+      ctx.body = { code: 500, message: error.message };
+    }
+  }
+
+  /**
    * 创建订单
-   * @param {Object} ctx - Koa 的上下文对象
-   * @returns {Promise<void>}
    */
   async create(ctx) {
     try {
       const user_id = ctx.state.user.id;
-
       let data = ctx.request.body.data;
 
-      if (data.lenght === 0) {
+      if (!data || data.length === 0) {
         return ctx.app.emit("error", creatOrderError, ctx);
       }
 
       const address = await queryDefaultAddress(user_id);
-
       if (!address.id) {
         throw new Error("默认没有地址");
       }
 
+      // 核心修改：重新计算总价，不信任前端传过来的 goods_price
+      const calcItems = data.map(item => ({
+        goods_id: item.id, // 老接口 item.id 实际上是 goods_id
+        spec_ids: item.spec_ids || [],
+        quantity: item.quantity
+      }));
+      const settlement = await settlementService.calculateFinalPrice(calcItems);
+
       const genid = new GenId({ WorkerId: 1 });
-
-      // 计算总价
-      let totalPrice = 0;
-
-      data.map((item) => {
-        totalPrice += item.goods_price * item.quantity;
-        totalPrice = +totalPrice.toFixed(2);
-      });
-
-      // 生成订单号
       const order_number = `D${genid.NextId()}`;
 
       // 组合订单
       const order = {
         user_id,
         address_id: +address.id,
-        total_price: totalPrice,
+        total_price: settlement.total_price,
         state: 0,
         order_number,
       };
       
       // 组合订单项
-      const orderItem = data.map((item) => ({
-        id: item.id,
-        goods_price: item.goods_price,
+      const orderItems = settlement.items.map((item) => ({
+        id: item.goods_id,
+        goods_price: item.unit_price,
         quantity: item.quantity,
+        specs: item.specs.map(s => s.name).join('/')
       }));
 
       // 创建订单
-      const res = await createOrder(order, orderItem);
+      const res = await createOrder(order, orderItems);
+      // ... (timeout and redis logic remains)
 
       const { ORDER_TIMEOUT } = require("../config/config.default");
       const timeoutMinutes = parseInt(ORDER_TIMEOUT) || 15;
@@ -112,30 +130,32 @@ class OrderController {
         throw new Error("购物车不能为空");
       }
 
+      // 核心修改：重新计算总价
+      const calcItems = items.map(item => ({
+        goods_id: item.goods_id || item.id,
+        spec_ids: item.spec_ids || [],
+        quantity: item.quantity
+      }));
+      const settlement = await settlementService.calculateFinalPrice(calcItems);
+
       const genid = new GenId({ WorkerId: 1 });
       const order_number = `YH${genid.NextId()}`;
-
-      // 计算总价
-      let total_price = 0;
-      items.forEach((item) => {
-        total_price += (item.totalPrice || item.price) * (item.quantity || 1);
-      });
 
       const orderData = {
         user_id,
         address_id: address_id || null, // 自提可为null
-        total_price,
+        total_price: settlement.total_price,
         order_number,
         state: 0, // 待支付
         order_type,
         remark,
       };
 
-      const orderItems = items.map(item => ({
-        id: item.id, // 必须传 id，service 内部库存扣减依赖 item.id
+      const orderItems = settlement.items.map(item => ({
+        id: item.goods_id,
         quantity: item.quantity,
-        price: item.totalPrice / item.quantity,
-        specs: Array.isArray(item.specs) ? item.specs.join('/') : item.specs
+        price: item.unit_price,
+        specs: item.specs.map(s => s.name).join('/')
       }));
 
       const res = await createOrder(orderData, orderItems);

@@ -1,4 +1,4 @@
-const { userCount,goodsCount,orderCount,getSummary } = require("../../service/statistics");
+const { userCount, goodsCount, orderCount, getSummary, getSalesTrend, getCategoryDistribution } = require("../../service/statistics");
 class statisticsController {
   /**
    * 获取用户统计数据
@@ -49,6 +49,28 @@ class statisticsController {
       result: res,
     };
   }
+
+  // 销售趋势
+  async getSalesTrend(ctx) {
+    const { days = 7 } = ctx.query;
+    const res = await getSalesTrend(parseInt(days));
+    ctx.body = {
+      code: 0,
+      message: "获取销售趋势数据成功",
+      result: res,
+    };
+  }
+
+  // 分类分布
+  async getCategoryDistribution(ctx) {
+    const res = await getCategoryDistribution();
+    ctx.body = {
+      code: 0,
+      message: "获取分类分布数据成功",
+      result: res,
+    };
+  }
 }
+
 
 module.exports = new statisticsController();

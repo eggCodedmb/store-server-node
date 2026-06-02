@@ -10,11 +10,15 @@ const {
   create_new,
   pay_order,
   getMyOrders,
+  calculate,
 } = require("../controller/orderController");
 const { orderInfoRules } = require("../constant/rules");
 const { orderFormError } = require("../constant/errType");
 
 const router = new Router({ prefix: "/order" });
+
+// 价格试算接口 (后端唯一真理)
+router.post("/calculate", auth, calculate);
 
 // 益禾堂小程序新接口
 router.post("/create_new", auth, create_new);

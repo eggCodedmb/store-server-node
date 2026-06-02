@@ -78,6 +78,62 @@ class statisticsService {
       monthlySales: parseFloat(monthlySales || 0).toFixed(2)
     };
   }
+
+  /**
+   * 获取销售趋势数据
+   * @param {number} days - 统计的天数
+   */
+  async getSalesTrend(days = 7) {
+    const results = [];
+    for (let i = days - 1; i >= 0; i--) {
+      const date = dayjs().subtract(i, "day").format("YYYY-MM-DD");
+      const start = dayjs(date).startOf("day").toDate();
+      const end = dayjs(date).endOf("day").toDate();
+
+      const [orderCount, salesAmount] = await Promise.all([
+        Order.count({
+          where: {
+            createdAt: { [Op.between]: [start, end] }
+          }
+        }),
+        Order.sum("total_price", {
+          where: {
+            createdAt: { [Op.between]: [start, end] }
+          }
+        })
+      ]);
+
+      results.push({
+        date,
+        orders: orderCount || 0,
+        sales: parseFloat(salesAmount || 0).toFixed(2)
+      });
+    }
+    return results;
+  }
+
+  /**
+   * 获取商品分类分布数据
+   */
+  async getCategoryDistribution() {
+    const Category = require("../../model/product/category");
+    const categories = await Category.findAll({
+      attributes: ["id", "category_name"],
+      include: [
+        {
+          model: Goods,
+          attributes: ["id"],
+          through: { attributes: [] }
+        }
+      ]
+    });
+
+    return categories.map(cat => ({
+      name: cat.category_name,
+      value: cat.goods.length
+    }));
+  }
 }
+
 
 module.exports = new statisticsService();

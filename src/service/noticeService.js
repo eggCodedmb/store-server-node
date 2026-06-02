@@ -24,6 +24,7 @@ class NoticeService {
       whereOpt.title = { [Op.like]: `%${title}%` };
     }
     
+    // 如果有门店ID，查询该门店的公告以及全店公告 (store_id 为 null)
     if (storeId) {
       whereOpt[Op.or] = [
         { store_id: storeId },

@@ -8,12 +8,13 @@ class GoodsService {
   async createGoods(goodsData) {
     const transaction = await sequelize.transaction();
     try {
-      const { specs, ...goods } = goodsData;
-      const res = await Goods.create(goods, { transaction });
+      const { specs, ...goodsBase } = goodsData;
+      const { SpecGroup, SpecOption, ProductSpecRel } = require("../model/index");
+
+      const res = await Goods.create(goodsBase, { transaction });
       const product_id = res.id;
 
       if (specs && Array.isArray(specs)) {
-        const { SpecGroup, SpecOption, ProductSpecRel } = require("../model/index");
         for (const spec of specs) {
           if (!spec.name || spec.name.trim() === "") continue;
 
@@ -34,14 +35,14 @@ class GoodsService {
               }
             }
           }
-          
+
           await ProductSpecRel.create({ product_id, group_id }, { transaction });
         }
       }
 
       await transaction.commit();
       await delKeyAll("product:*");
-      return res.dataValues ? res.dataValues : null;
+      return res.dataValues;
     } catch (error) {
       await transaction.rollback();
       throw error;
@@ -126,12 +127,12 @@ class GoodsService {
       } else if (payload && Array.isArray(payload.ids)) {
         ids = payload.ids;
       } else if (payload && payload.id) {
-        ids = [payload.id];
+        ids = Array.isArray(payload.id) ? payload.id : [payload.id];
       }
 
       if (ids.length === 0) return;
 
-      const result = await Goods.destroy({ where: { id: { [Op.in]: ids } } });
+      const result = await Goods.update({ status: 0 }, { where: { id: { [Op.in]: ids } } });
       await delKeyAll("product:*");
       return result;
     } catch (error) {
@@ -141,8 +142,16 @@ class GoodsService {
 
   async restoreGoods(arr) {
     try {
-      const promises = arr.map((item) => Goods.restore({ where: { id: item } }));
-      const result = await Promise.all(promises);
+      let ids = [];
+      if (Array.isArray(arr)) {
+        ids = arr;
+      } else if (arr && Array.isArray(arr.ids)) {
+        ids = arr.ids;
+      } else if (arr && arr.id) {
+        ids = Array.isArray(arr.id) ? arr.id : [arr.id];
+      }
+      if (ids.length === 0) return;
+      const result = await Goods.update({ status: 1 }, { where: { id: { [Op.in]: ids } } });
       await delKeyAll("product:*");
       return result;
     } catch (error) {
@@ -156,6 +165,7 @@ class GoodsService {
         pageNum = 1,
         pageSize = 10,
         name = "",
+          status = "",
         stockFilter = "",
         sortField = "id",
         sortOrder = "DESC",
@@ -164,7 +174,10 @@ class GoodsService {
       } = queryParams;
 
       const whereOpt = {};
-      if (name) {
+      if (status !== "") {
+          whereOpt.status = status;
+        }
+        if (name) {
         whereOpt.goods_name = { [Op.like]: `%${name}%` };
       }
       if (storeId) {

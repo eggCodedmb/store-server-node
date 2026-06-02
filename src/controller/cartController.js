@@ -5,6 +5,7 @@ const {
   removeCarts,
   selectALllCarts,
   oneUserCarts,
+  calculateTotal,
 } = require("../service/cartService");
 const {
   addCartError,
@@ -40,8 +41,8 @@ class CartController {
   async findAll(ctx) {
     try {
       const { id } = ctx.state.user;
-      const { pageNum, pageSize } = ctx.request.query;
-      const res = await oneUserCarts(id, pageNum, pageSize);
+      const { pageNum, pageSize, store_id } = ctx.request.query;
+      const res = await oneUserCarts(id, pageNum, pageSize, store_id);
       ctx.body = {
         code: 0,
         message: "获取购物车列表",
@@ -52,6 +53,27 @@ class CartController {
       throw error;
     }
   }
+
+  /**
+   * 获取购物车选中商品的总价
+   */
+  async getTotalPrice(ctx) {
+    try {
+      const user_id = ctx.state.user.id;
+      const res = await calculateTotal(user_id);
+      ctx.body = {
+        code: 0,
+        message: "计算总价成功",
+        result: {
+          total_price: res,
+        },
+      };
+    } catch (error) {
+      console.error(error);
+      ctx.body = { code: 500, message: "计算总价失败" };
+    }
+  }
+
   /**
    * 更新购物车
    */

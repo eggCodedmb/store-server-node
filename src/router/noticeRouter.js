@@ -15,6 +15,7 @@ const router = new Router({ prefix: "/notice" });
 router.get("/icons", auth, getIcons);
 
 // 获取公告列表
+router.get("/list", auth, findAll);
 router.post("/list", auth, authorize("/notice/list", "POST"), findAll);
 
 // 获取公告详情

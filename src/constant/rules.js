@@ -133,6 +133,11 @@ module.exports = {
       required: false,
       description: "商品详情介绍，可选字符串",
     },
+    store_id: {
+      type: "integer",
+      required: true,
+      description: "所属门店 ID，必填",
+    },
     specs: {
       type: "array",
       required: false,

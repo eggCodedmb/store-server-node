@@ -49,7 +49,7 @@ class CartService {
     }
   }
 
-  async oneUserCarts(user_id, pageNum = 1, pageSize = 5) {
+  async oneUserCarts(user_id, pageNum = 1, pageSize = 5, store_id = null) {
     try {
       const offset = (pageNum - 1) * pageSize;
       const { count, rows } = await Cart.findAndCountAll({
@@ -62,6 +62,57 @@ class CartService {
           as: "product",
         },
       });
+
+      // 如果提供了 store_id，进行库存和门店匹配校验
+      if (store_id && rows.length > 0) {
+        // 找出所有不在当前门店的商品名称 (去重)
+        const otherStoreProductNames = [
+          ...new Set(
+            rows
+              .filter((r) => r.product && r.product.store_id != store_id)
+              .map((r) => r.product.goods_name)
+          ),
+        ];
+
+        let matchingMap = new Map();
+        if (otherStoreProductNames.length > 0) {
+          const matchingProducts = await Goods.findAll({
+            where: {
+              goods_name: { [Op.in]: otherStoreProductNames },
+              store_id: store_id,
+            },
+          });
+          matchingProducts.forEach((p) => matchingMap.set(p.goods_name, p));
+        }
+
+        rows.forEach((row) => {
+          if (!row.product) {
+            row.setDataValue("is_available", false);
+            row.setDataValue("selected", false); // 不加入购物车计算
+            return;
+          }
+
+          if (row.product.store_id == store_id) {
+            // 在当前门店，只需检查库存
+            const available = row.product.goods_num > 0;
+            row.setDataValue("is_available", available);
+            if (!available) {
+              row.setDataValue("selected", false); // 不加入购物车计算
+            }
+          } else {
+            // 不在当前门店，检查是否有同名商品且有库存
+            const match = matchingMap.get(row.product.goods_name);
+            if (match && match.goods_num > 0) {
+              row.setDataValue("is_available", true);
+              row.setDataValue("matching_product", match);
+            } else {
+              row.setDataValue("is_available", false);
+              row.setDataValue("selected", false); // 不加入购物车计算
+            }
+          }
+        });
+      }
+
       const totalPages = Math.ceil(count / pageSize);
       pageNum = Math.min(pageNum, totalPages);
       return {
@@ -158,6 +209,38 @@ class CartService {
         },
       }
     );
+  }
+
+  /**
+   * 计算购物车选中商品的总价
+   * @param {number} user_id 用户ID
+   * @returns {Promise<string>} 总价
+   */
+  async calculateTotal(user_id) {
+    try {
+      const carts = await Cart.findAll({
+        where: {
+          user_id,
+          selected: true,
+        },
+        include: {
+          model: Goods,
+          as: "product",
+          attributes: ["goods_price"],
+        },
+      });
+
+      let total = 0;
+      carts.forEach((item) => {
+        if (item.product) {
+          total += item.product.goods_price * item.number;
+        }
+      });
+
+      return total.toFixed(2);
+    } catch (error) {
+      throw error;
+    }
   }
 }
 
