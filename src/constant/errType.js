@@ -250,4 +250,10 @@ module.exports = {
     message: "您没有权限执行此操作",
     result: "",
   },
+  // 门店错误类型
+  storeFormatError: {
+    code: "10701",
+    message: "门店参数有误",
+    result: "",
+  },
 };

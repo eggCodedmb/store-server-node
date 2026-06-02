@@ -419,13 +419,17 @@ class GoodsService {
   }
 
   async getGoodsDetailById(id) {
-    const { SpecGroup, SpecOption } = require("../model/index");
+    const { SpecGroup, SpecOption, Store } = require("../model/index");
     const res = await Goods.findOne({
       where: { id },
       include: [
         {
           model: require("../model/product/category"),
           through: { attributes: [] },
+        },
+        {
+          model: Store,
+          attributes: ["id", "name"],
         },
         {
           model: SpecGroup,

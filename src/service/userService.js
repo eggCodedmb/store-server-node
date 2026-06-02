@@ -127,13 +127,42 @@ class UserService {
    * 查询所有用户
    * @param {number} [pageSize=20] - 每页大小
    * @param {number} [pageNum=1] - 页码
-   * @returns {Promise<Array<Object>>} - 返回用户数据数组
+   * @param {Object} [filters={}] - 过滤条件
+   * @param {string} [filters.keyword] - 关键词搜索(用户名/昵称/邮箱)
+   * @param {string} [filters.user_name] - 用户名精确匹配
+   * @param {string} [filters.nick_name] - 昵称模糊匹配
+   * @param {string} [filters.email] - 邮箱精确匹配
+   * @returns {Promise<Object>} - 返回分页用户数据
    */
-  async findAllUser(pageSize = 20, pageNum = 1) {
+  async findAllUser(pageSize = 20, pageNum = 1, filters = {}) {
     try {
       const { Store } = require("../model/index");
       const offset = (pageNum - 1) * pageSize;
+
+      // 构建查询条件
+      const whereOpt = {};
+      if (filters.keyword) {
+        whereOpt[Op.or] = [
+          { user_name: { [Op.like]: `%${filters.keyword}%` } },
+          { nick_name: { [Op.like]: `%${filters.keyword}%` } },
+          { email: { [Op.like]: `%${filters.keyword}%` } },
+        ];
+      }
+      if (filters.user_name) {
+        whereOpt.user_name = filters.user_name;
+      }
+      if (filters.nick_name) {
+        whereOpt.nick_name = { [Op.like]: `%${filters.nick_name}%` };
+      }
+      if (filters.email) {
+        whereOpt.email = filters.email;
+      }
+
+      console.log("[findAllUser] filters:", filters);
+      console.log("[findAllUser] whereOpt:", JSON.stringify(whereOpt, (k, v) => (typeof v === "symbol" ? v.toString() : v)));
+
       const { count, rows } = await User.findAndCountAll({
+        where: whereOpt,
         attributes: { exclude: ["password"] },
         include: [
           {

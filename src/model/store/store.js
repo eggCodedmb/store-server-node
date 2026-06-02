@@ -57,6 +57,32 @@ const Store = seq.define(
       allowNull: true,
       comment: "门店Logo",
     },
+    cover: {
+      type: DataTypes.STRING,
+      allowNull: true,
+      comment: "门店封面图",
+    },
+    status: {
+      type: DataTypes.TINYINT,
+      allowNull: false,
+      defaultValue: 1,
+      comment: "门店状态(1=营业中, 0=已关闭)",
+    },
+    province: {
+      type: DataTypes.STRING,
+      allowNull: true,
+      comment: "省",
+    },
+    city: {
+      type: DataTypes.STRING,
+      allowNull: true,
+      comment: "市",
+    },
+    district: {
+      type: DataTypes.STRING,
+      allowNull: true,
+      comment: "区/县",
+    },
   },
   {
     timestamps: true,

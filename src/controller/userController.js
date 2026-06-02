@@ -216,8 +216,20 @@ class UserController {
 
   async getAllUser(ctx) {
     try {
-      const { pageNum = 1, pageSize = 20 } = ctx.request.body || {};
-      const res = await findAllUser(pageSize, pageNum);
+      const {
+        pageNum = 1,
+        pageSize = 20,
+        keyword,
+        user_name,
+        nick_name,
+        email,
+      } = ctx.request.body || {};
+      const filters = {};
+      if (keyword !== undefined && keyword !== "") filters.keyword = keyword;
+      if (user_name !== undefined && user_name !== "") filters.user_name = user_name;
+      if (nick_name !== undefined && nick_name !== "") filters.nick_name = nick_name;
+      if (email !== undefined && email !== "") filters.email = email;
+      const res = await findAllUser(pageSize, pageNum, filters);
       ctx.body = { code: 0, message: "查询成功", result: res };
     } catch (error) {
       throw error;

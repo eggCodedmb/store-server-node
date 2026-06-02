@@ -4,13 +4,14 @@ const {
   findAllStores,
   findNearbyStores,
   getStoreById,
+  getStoreListWithCoords,
   updateStoreById,
   deleteStoreById,
 } = require("../service/storeService");
 
 class StoreController {
   async create(ctx) {
-    const { name, description, address, business_hours, longitude, latitude, phone, logo } = ctx.request.body;
+    const { name, description, address, business_hours, longitude, latitude, phone, logo, cover, status, province, city, district, photos } = ctx.request.body;
     const { id: user_id } = ctx.state.user;
 
     try {
@@ -19,12 +20,17 @@ class StoreController {
         description,
         address,
         business_hours,
-        longitude,
-        latitude,
+        longitude: longitude || null,
+        latitude: latitude || null,
         phone,
         logo,
+        cover,
+        status: status !== undefined ? status : 1,
+        province,
+        city,
+        district,
         user_id,
-      });
+      }, photos || []);
       ctx.body = { code: 0, message: "门店创建成功", result: res };
     } catch (err) {
       console.error(err);
@@ -34,9 +40,9 @@ class StoreController {
 
   async list(ctx) {
     const { id: user_id } = ctx.state.user;
-    const { pageNum = 1, pageSize = 20 } = ctx.request.query;
+    const { pageNum = 1, pageSize = 20, keyword = "", status } = ctx.request.query;
     try {
-      const res = await getStoresByUserId(user_id, pageNum, pageSize);
+      const res = await getStoresByUserId(user_id, pageNum, pageSize, keyword, { status });
       ctx.body = { code: 0, message: "获取门店列表成功", result: res };
     } catch (err) {
       console.error(err);
@@ -45,9 +51,9 @@ class StoreController {
   }
 
   async allList(ctx) {
-    const { pageNum = 1, pageSize = 20, keyword = "" } = ctx.request.query;
+    const { pageNum = 1, pageSize = 20, keyword = "", status, province, city } = ctx.request.query;
     try {
-      const res = await findAllStores(pageNum, pageSize, keyword);
+      const res = await findAllStores(pageNum, pageSize, keyword, { status, province, city });
       ctx.body = { code: 0, message: "获取门店列表成功", result: res };
     } catch (err) {
       console.error(err);
@@ -69,6 +75,16 @@ class StoreController {
     }
   }
 
+  async mapList(ctx) {
+    try {
+      const res = await getStoreListWithCoords();
+      ctx.body = { code: 0, message: "获取地图门店列表成功", result: res };
+    } catch (err) {
+      console.error(err);
+      ctx.app.emit("error", { code: 500, message: "获取地图门店列表失败", result: err }, ctx);
+    }
+  }
+
   async getDetail(ctx) {
     const { id } = ctx.params;
     try {
@@ -86,18 +102,24 @@ class StoreController {
 
   async update(ctx) {
     const id = ctx.params.id;
-    const { name, description, address, business_hours, longitude, latitude, phone, logo } = ctx.request.body;
+    const { name, description, address, business_hours, longitude, latitude, phone, logo, cover, status, province, city, district, photos } = ctx.request.body;
     try {
-      const res = await updateStoreById(id, {
+      const storeData = {
         name,
         description,
         address,
         business_hours,
-        longitude,
-        latitude,
+        longitude: longitude || null,
+        latitude: latitude || null,
         phone,
         logo,
-      });
+        cover,
+        status,
+        province,
+        city,
+        district,
+      };
+      const res = await updateStoreById(id, storeData, photos);
       if (res) {
         ctx.body = { code: 0, message: "门店更新成功", result: { id } };
       } else {
@@ -120,7 +142,7 @@ class StoreController {
       }
     } catch (err) {
       console.error(err);
-      ctx.app.emit("error", { code: 500, message: "门店删除失败", result: err }, ctx);
+      ctx.app.emit("error", { code: 400, message: err.message || "门店删除失败", result: "" }, ctx);
     }
   }
 }

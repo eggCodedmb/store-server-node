@@ -12,6 +12,7 @@ const Topping = require("./product/topping");
 const ProductSpecRel = require("./product/productSpecRel");
 const Notice = require("./system/notice");
 const Store = require("./store/store");
+const StorePhoto = require("./store/storePhoto");
 
 // RBAC Models
 const Role = require("./rbac/Role");
@@ -21,7 +22,7 @@ const UserStore = require("./user/UserStore");
 
 // 用户和订单关联关系
 User.hasMany(Order, { foreignKey: "user_id" });
-Order.belongsTo(User, { foreignKey: "user_id" });
+Order.belongsTo(User, { foreignKey: "user_id", as: "user" });
 
 // 订单与订单项关联关系
 Order.hasMany(OrderItem, { foreignKey: "order_id" });
@@ -105,9 +106,14 @@ Store.belongsToMany(User, {
 Store.hasMany(Goods, { foreignKey: "store_id" });
 Goods.belongsTo(Store, { foreignKey: "store_id" });
 
+// 门店和照片关联关系
+Store.hasMany(StorePhoto, { foreignKey: "store_id", as: "photos" });
+StorePhoto.belongsTo(Store, { foreignKey: "store_id" });
+
 module.exports = {
   User,
   Store,
+  StorePhoto,
   UserStore,
   Goods,
   Cart,

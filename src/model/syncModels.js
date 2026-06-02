@@ -1,6 +1,7 @@
 const {
   User,
   Store,
+  StorePhoto,
   UserStore,
   Goods,
   Cart,
@@ -30,6 +31,7 @@ const syncModels = async () => {
     // 1. 同步基础模型
     await User.sync({ force: true });
     await Store.sync({ force: true });
+    await StorePhoto.sync({ force: true });
     await UserStore.sync({ force: true });
     await Goods.sync({ force: true });
     await Permission.sync({ force: true });
@@ -82,6 +84,7 @@ const dropModels = async () => {
     await Permission.drop();
     await Goods.drop();
     await UserStore.drop();
+    await StorePhoto.drop();
     await Store.drop();
     await User.drop();
     await Notice.drop();

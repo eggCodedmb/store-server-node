@@ -257,4 +257,24 @@ module.exports = {
   cartDeleteRules: {
     ids: { type: "array", itemType: "integer", required: true },
   },
+  // 门店
+  storeFormatRules: {
+    name: {
+      type: "string",
+      required: true,
+      description: "门店名称，必填",
+    },
+    longitude: {
+      type: "number",
+      required: false,
+    },
+    latitude: {
+      type: "number",
+      required: false,
+    },
+    phone: {
+      type: "string",
+      required: false,
+    },
+  },
 };

@@ -31,6 +31,7 @@ const seedRBAC = async () => {
       { name: "添加商品按钮", code: "goods:add_btn", type: 2, parent_id: 4 },
       { name: "编辑商品按钮", code: "goods:edit_btn", type: 2, parent_id: 4 },
       { name: "下架商品按钮", code: "goods:delete_btn", type: 2, parent_id: 4 },
+      { name: "编辑门店按钮", code: "goods:edit_store", type: 2, parent_id: 4 },
       { name: "权限分配按钮", code: "user:assign_role_btn", type: 2, parent_id: 2 },
       { name: "分配权限按钮", code: "role:assign_perm_btn", type: 2, parent_id: 9 }, // system/role 的 id 是 9
       
@@ -61,6 +62,9 @@ const seedRBAC = async () => {
       { name: "用户统计接口", code: "api:tj:user_count", type: 3, path: "/tj/user-count", method: "POST", parent_id: 1 },
       { name: "商品统计接口", code: "api:tj:goods_count", type: 3, path: "/tj/goods-count", method: "POST", parent_id: 1 },
       { name: "订单统计接口", code: "api:tj:order_count", type: 3, path: "/tj/order-count", method: "POST", parent_id: 1 },
+      { name: "销售趋势接口", code: "api:tj:sales_trend", type: 3, path: "/tj/sales-trend", method: "GET", parent_id: 1 },
+      { name: "分类分布接口", code: "api:tj:category_distribution", type: 3, path: "/tj/category-distribution", method: "GET", parent_id: 1 },
+      { name: "最近订单接口", code: "api:tj:recent_orders", type: 3, path: "/tj/recent-orders", method: "GET", parent_id: 1 },
 
       // 用户管理更多接口
       { name: "查询所有用户接口", code: "api:user:all", type: 3, path: "/user/all", method: "POST", parent_id: 2 },
@@ -89,10 +93,10 @@ const seedRBAC = async () => {
     const findId = (code) => createdPerms.find(p => p.code === code)?.id || 0;
     
     const relations = [
-      { parent: "/dashboard", children: ["api:tj:summary", "api:tj:user_count", "api:tj:goods_count", "api:tj:order_count"] },
+      { parent: "/dashboard", children: ["api:tj:summary", "api:tj:user_count", "api:tj:goods_count", "api:tj:order_count", "api:tj:sales_trend", "api:tj:category_distribution", "api:tj:recent_orders"] },
       { parent: "/system", children: ["/system/role", "/system/menu", "/system/notice"] },
       { parent: "/user_manage", children: ["user:assign_role_btn", "api:user:all", "api:user:add", "api:user:delete"] },
-      { parent: "/goods_manage", children: ["goods:add_btn", "goods:edit_btn", "goods:delete_btn", "api:goods:all", "api:goods:create", "api:goods:update", "api:goods:off", "api:goods:on", "api:goods:removal"] },
+      { parent: "/goods_manage", children: ["goods:add_btn", "goods:edit_btn", "goods:delete_btn", "goods:edit_store", "api:goods:all", "api:goods:create", "api:goods:update", "api:goods:off", "api:goods:on", "api:goods:removal"] },
       { parent: "/category_manage", children: ["api:category:all", "api:category:create", "api:category:update", "api:category:delete", "api:category:add_goods", "api:category:remove_goods"] },
       { parent: "/order_manage", children: ["api:order:all", "api:order:delete", "api:order:update"] },
       { parent: "/system/notice", children: ["api:notice:list", "api:notice:create", "api:notice:update", "api:notice:delete"] },
