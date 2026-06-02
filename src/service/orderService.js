@@ -26,7 +26,8 @@ class OrderService {
         goods_id: +item.id,
         price: item.price || item.goods_price || 0, // 兼容新旧接口的 price 字段
         quantity: item.quantity,
-        specs: item.specs || null // 兼容新接口的 specs 字段
+        specs: item.specs || null, // 兼容新接口的 specs 字段
+        spec_ids: item.spec_ids || null // 新增：保存规格ID列表
       }));
 
       const orderService = new OrderService();

@@ -7,16 +7,17 @@ class CartService {
    * 创建或更新购物车条目
    * @param {number} user_id - 用户ID
    * @param {number} goods_id - 商品ID
-   * @param {number} number - 购买数量
+   * @param {string} specs - 商品规格快照
    * @returns {Promise<Object>} - 返回创建或更新的购物车条目
    */
-  async createOrUpdate(user_id, goods_id) {
+  async createOrUpdate(user_id, goods_id, specs = null) {
     try {
       const res = await Cart.findOne({
         where: {
           [Op.and]: {
             user_id,
             goods_id,
+            specs: specs || null,
           },
         },
       });
@@ -25,7 +26,7 @@ class CartService {
         await res.increment("number");
         return await res.reload(); // 返回更新后的记录
       } else {
-        return await Cart.create({ user_id, goods_id });
+        return await Cart.create({ user_id, goods_id, specs });
       }
     } catch (error) {
       throw error;

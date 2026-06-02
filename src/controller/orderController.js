@@ -150,13 +150,14 @@ class OrderController {
         order_type,
         remark,
       };
-
-      const orderItems = settlement.items.map(item => ({
-        id: item.goods_id,
-        quantity: item.quantity,
-        price: item.unit_price,
-        specs: item.specs.map(s => s.name).join('/')
-      }));
+// 创建订单项数据
+const orderItems = settlement.items.map(item => ({
+  id: item.goods_id,
+  quantity: item.quantity,
+  price: item.unit_price,
+  specs: item.specs.map(s => s.name).join('/'),
+  spec_ids: item.specs.map(s => s.id).join(',') // 新增：保存规格ID列表
+}));
 
       const res = await createOrder(orderData, orderItems);
       const { ORDER_TIMEOUT } = require("../config/config.default");

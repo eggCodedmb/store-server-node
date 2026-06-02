@@ -20,15 +20,24 @@ class GoodsService {
 
           let group_id = spec.id;
           if (!group_id) {
-            const group = await SpecGroup.create({ name: spec.name }, { transaction });
+            const group = await SpecGroup.create(
+              {
+                name: spec.name,
+                select_type: spec.select_type || "single",
+                is_required:
+                  spec.is_required !== undefined ? spec.is_required : true,
+              },
+              { transaction }
+            );
             group_id = group.id;
             if (spec.options && Array.isArray(spec.options)) {
               const options = spec.options
-                .filter(opt => opt.name && opt.name.trim() !== "")
+                .filter((opt) => opt.name && opt.name.trim() !== "")
                 .map((opt) => ({
                   group_id: group_id,
                   name: opt.name,
                   price_delta: opt.price_delta,
+                  is_default: opt.is_default || false,
                 }));
               if (options.length > 0) {
                 await SpecOption.bulkCreate(options, { transaction });
@@ -75,15 +84,24 @@ class GoodsService {
           let group_id = spec.id;
           if (!group_id) {
             // 自定义规格：创建新记录
-            const group = await SpecGroup.create({ name: spec.name }, { transaction });
+            const group = await SpecGroup.create(
+              {
+                name: spec.name,
+                select_type: spec.select_type || "single",
+                is_required:
+                  spec.is_required !== undefined ? spec.is_required : true,
+              },
+              { transaction }
+            );
             group_id = group.id;
             if (spec.options && Array.isArray(spec.options)) {
               const options = spec.options
-                .filter(opt => opt.name && opt.name.trim() !== "")
+                .filter((opt) => opt.name && opt.name.trim() !== "")
                 .map((opt) => ({
                   group_id: group_id,
                   name: opt.name,
                   price_delta: opt.price_delta,
+                  is_default: opt.is_default || false,
                 }));
               if (options.length > 0) {
                 await SpecOption.bulkCreate(options, { transaction });
@@ -415,9 +433,10 @@ class GoodsService {
           include: [
             {
               model: SpecOption,
-              attributes: ["id", "name", "price_delta"],
+              attributes: ["id", "name", "price_delta", "is_default"],
             },
           ],
+          attributes: ["id", "name", "select_type", "is_required"],
         },
       ],
     });

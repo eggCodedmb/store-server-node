@@ -45,6 +45,11 @@ const OrderItem = seq.define(
       allowNull: true,
       comment: "规格快照 (JSON 或字符串)",
     },
+    spec_ids: {
+      type: DataTypes.STRING,
+      allowNull: true,
+      comment: "规格ID列表 (逗号分隔)",
+    },
   },
   {
     timestamps: true, // 开启 Sequelize 自动添加的时间戳

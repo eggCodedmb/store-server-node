@@ -20,9 +20,9 @@ class CartController {
   async addCart(ctx) {
     try {
       const user_id = ctx.state.user.id;
-      const { goods_id } = ctx.request.body;
+      const { goods_id, specs } = ctx.request.body;
       // 操作数据库，创建或更新购物车记录
-      const res = await createOrUpdate(user_id, goods_id);
+      const res = await createOrUpdate(user_id, goods_id, specs);
       ctx.body = {
         code: 0,
         message: "添加成功",

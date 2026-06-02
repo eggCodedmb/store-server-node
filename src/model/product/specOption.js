@@ -26,6 +26,12 @@ const SpecOption = seq.define(
       defaultValue: 0,
       comment: "价格增量（如大杯 +3元，去冰 +0元）",
     },
+    is_default: {
+      type: DataTypes.BOOLEAN,
+      allowNull: false,
+      defaultValue: false,
+      comment: "是否默认选中: true-是, false-否",
+    },
   },
   {
     timestamps: true,

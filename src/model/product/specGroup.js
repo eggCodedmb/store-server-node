@@ -15,6 +15,18 @@ const SpecGroup = seq.define(
       allowNull: false,
       comment: "规格名（如：杯型、温度、甜度）",
     },
+    select_type: {
+      type: DataTypes.ENUM("single", "multiple"),
+      allowNull: false,
+      defaultValue: "single",
+      comment: "选择模式: single-单选, multiple-多选",
+    },
+    is_required: {
+      type: DataTypes.BOOLEAN,
+      allowNull: false,
+      defaultValue: true,
+      comment: "是否必选: true-是, false-否",
+    },
   },
   {
     timestamps: true,

@@ -226,6 +226,12 @@ module.exports = {
       required: true,
       description: "商品 ID，必须是整数且必填",
     },
+    specs: {
+      type: "string",
+      required: false,
+      allowEmpty: true,
+      description: "商品规格快照",
+    },
   },
   cartSelectRules: {
     id: {
