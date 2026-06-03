@@ -42,7 +42,7 @@ class OrderService {
     } catch (error) {
       await transaction.rollback();
       console.error("创建订单失败:", error);
-      throw new Error("创建订单失败");
+      throw error; // 保留原始错误信息（如 "库存不足"、"商品不存在"）
     }
   }
   /**

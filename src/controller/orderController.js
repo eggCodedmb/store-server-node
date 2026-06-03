@@ -38,6 +38,65 @@ class OrderController {
   }
 
   /**
+   * 库存预检查接口 - 在创建订单前检查商品库存
+   */
+  async checkStock(ctx) {
+    try {
+      const { items } = ctx.request.body;
+      if (!items || items.length === 0) {
+        throw new Error("商品列表不能为空");
+      }
+
+      const Goods = require("../model/product/goods");
+      const result = [];
+
+      for (const item of items) {
+        const goodsId = item.goods_id || item.id;
+        const goods = await Goods.findByPk(goodsId);
+
+        if (!goods) {
+          result.push({
+            goods_id: goodsId,
+            name: item.name || '未知商品',
+            available: false,
+            reason: '商品不存在',
+            stock: 0
+          });
+        } else if (goods.goods_num < item.quantity) {
+          result.push({
+            goods_id: goods.id,
+            name: goods.goods_name,
+            available: false,
+            reason: '库存不足',
+            stock: goods.goods_num
+          });
+        } else {
+          result.push({
+            goods_id: goods.id,
+            name: goods.goods_name,
+            available: true,
+            stock: goods.goods_num
+          });
+        }
+      }
+
+      const allAvailable = result.every(r => r.available);
+
+      ctx.body = {
+        code: 0,
+        message: allAvailable ? "库存充足" : "部分商品库存不足",
+        result: {
+          all_available: allAvailable,
+          items: result
+        }
+      };
+    } catch (error) {
+      console.error(error);
+      ctx.body = { code: 500, message: error.message };
+    }
+  }
+
+  /**
    * 创建订单
    */
   async create(ctx) {
