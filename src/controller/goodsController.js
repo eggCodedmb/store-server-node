@@ -138,6 +138,70 @@ class GoodsController {
       console.error(error);
     }
   }
+
+  /**
+   * 批量校验商品在目标门店的可用性
+   * 用于切换门店时检查购物车商品
+   */
+  async batchCheckAvailability(ctx) {
+    try {
+      const { items, store_id } = ctx.request.body;
+
+      if (!items || items.length === 0) {
+        ctx.body = { code: 0, message: "商品列表为空", result: [] };
+        return;
+      }
+
+      if (!store_id) {
+        throw new Error("目标门店ID不能为空");
+      }
+
+      const result = [];
+
+      for (const item of items) {
+        // 按名称在目标门店查找同名商品（精确匹配）
+        const match = await Goods.findOne({
+          where: {
+            goods_name: item.name,
+            store_id: store_id,
+            status: 1
+          }
+        });
+
+        if (match) {
+          result.push({
+            original_id: item.goods_id,
+            original_name: item.name,
+            matched_id: match.id,
+            matched_name: match.goods_name,
+            available: match.goods_num > 0,
+            stock: match.goods_num,
+            price: parseFloat(match.goods_price || '0')
+          });
+        } else {
+          result.push({
+            original_id: item.goods_id,
+            original_name: item.name,
+            matched_id: null,
+            matched_name: null,
+            available: false,
+            stock: 0,
+            price: 0,
+            reason: '该门店无此商品'
+          });
+        }
+      }
+
+      ctx.body = {
+        code: 0,
+        message: "校验成功",
+        result: result
+      };
+    } catch (error) {
+      console.error("批量校验商品失败:", error);
+      ctx.body = { code: 500, message: error.message };
+    }
+  }
 }
 
 module.exports = new GoodsController();
