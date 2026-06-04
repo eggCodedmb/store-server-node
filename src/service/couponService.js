@@ -406,7 +406,7 @@ class CouponService {
       limit: +pageSize,
       order: [["claimed_at", "DESC"]],
       include: [
-        { model: User, attributes: ["id", "nick_name", "user_name", "avatar"] },
+        { model: User, as: "user", attributes: ["id", "nick_name", "user_name", "avatar"] },
       ],
       distinct: true,
     });

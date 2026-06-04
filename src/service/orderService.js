@@ -3,6 +3,9 @@ const OrderItem = require("../model/order/orderItem");
 const Goods = require("../model/product/goods");
 const Address = require("../model/address/address");
 const User = require("../model/user/user");
+const UserCoupon = require("../model/coupon/userCoupon");
+const CouponTemplate = require("../model/coupon/couponTemplate");
+const Store = require("../model/store/store");
 const seq = require("../db/seq");
 const { Op } = require("sequelize");
 const { productInventory } = require("../service/goodsService");
@@ -102,6 +105,22 @@ class OrderService {
             model: User,
             as: "user",
             attributes: ["id", "nick_name", "user_name", "avatar"],
+          },
+          {
+            model: UserCoupon,
+            include: [
+              {
+                model: CouponTemplate,
+                as: "template",
+                attributes: ["id", "name", "type", "value", "min_spend", "max_discount"],
+                include: [
+                  {
+                    model: Store,
+                    attributes: ["id", "name"],
+                  },
+                ],
+              },
+            ],
           },
         ],
         distinct: true,
@@ -235,6 +254,22 @@ class OrderService {
             model: User,
             as: "user",
             attributes: ["id", "nick_name", "user_name", "avatar"],
+          },
+          {
+            model: UserCoupon,
+            include: [
+              {
+                model: CouponTemplate,
+                as: "template",
+                attributes: ["id", "name", "type", "value", "min_spend", "max_discount"],
+                include: [
+                  {
+                    model: Store,
+                    attributes: ["id", "name"],
+                  },
+                ],
+              },
+            ],
           },
         ],
       });

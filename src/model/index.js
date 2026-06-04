@@ -134,7 +134,7 @@ UserCoupon.belongsTo(CouponTemplate, { as: "template", foreignKey: "template_id"
 
 // 用户和用户优惠券
 User.hasMany(UserCoupon, { foreignKey: "user_id" });
-UserCoupon.belongsTo(User, { foreignKey: "user_id" });
+UserCoupon.belongsTo(User, { as: "user", foreignKey: "user_id" });
 
 // 订单和用户优惠券
 Order.hasMany(UserCoupon, { foreignKey: "order_id" });
@@ -148,7 +148,7 @@ CheckinReward.belongsTo(CouponTemplate, { foreignKey: "template_id" });
 CouponTemplate.hasMany(CheckinReward, { foreignKey: "template_id" });
 
 // 签到记录和用户
-CheckinRecord.belongsTo(User, { foreignKey: "user_id" });
+CheckinRecord.belongsTo(User, { as: "user", foreignKey: "user_id" });
 User.hasMany(CheckinRecord, { foreignKey: "user_id" });
 
 // 签到记录和用户优惠券

@@ -347,6 +347,7 @@ class CheckinService {
       include: [
         {
           model: User,
+          as: "user",
           attributes: ["id", "nick_name", "user_name", "avatar"],
         },
         {

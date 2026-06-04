@@ -8,6 +8,7 @@ const {
   MYSQL_PASSWORD,
   MYSQL_DB,
   MYSQLDUMP_PATH,
+  BACKUP_INTERVAL,
 } = require("../config/config.default");
 
 /**
@@ -17,7 +18,7 @@ const backup = () => {
   return new Promise((resolve, reject) => {
     const timestamp = new Date().toISOString().replace(/[:.]/g, "-").slice(0, 19);
     const backupDir = path.resolve(__dirname, "../../备份");
-    
+
     // 确保备份目录存在
     if (!fs.existsSync(backupDir)) {
       fs.mkdirSync(backupDir, { recursive: true });
@@ -46,21 +47,30 @@ const backup = () => {
   });
 };
 
+/**
+ * 启动定时备份任务
+ * 间隔时间通过 .env 中的 BACKUP_INTERVAL 配置（单位：分钟，默认 3）
+ */
+const startBackupSchedule = () => {
+  const intervalMinutes = parseInt(BACKUP_INTERVAL) || 3;
+  const intervalMs = intervalMinutes * 60 * 1000;
+
+  console.log(`已启动定时备份任务，间隔: ${intervalMinutes} 分钟`);
+
+  // 立即运行一次
+  backup().catch(() => {});
+
+  setInterval(() => {
+    backup().catch(() => {});
+  }, intervalMs);
+};
+
 // 如果直接运行此脚本
 if (require.main === module) {
   const args = process.argv.slice(2);
-  
+
   if (args.includes("--schedule")) {
-    // 每 24 小时运行一次 (24 * 60 * 60 * 1000)
-    const interval = 24 * 60 * 60 * 1000;
-    console.log(`已启动定时备份任务，周期: 24小时`);
-    
-    // 立即运行一次
-    backup().catch(() => {});
-    
-    setInterval(() => {
-      backup().catch(() => {});
-    }, interval);
+    startBackupSchedule();
   } else {
     // 只运行一次
     backup()
@@ -69,4 +79,4 @@ if (require.main === module) {
   }
 }
 
-module.exports = backup;
+module.exports = { backup, startBackupSchedule };
