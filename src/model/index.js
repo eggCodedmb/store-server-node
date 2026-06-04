@@ -14,6 +14,10 @@ const Notice = require("./system/notice");
 const Store = require("./store/store");
 const StorePhoto = require("./store/storePhoto");
 
+// Coupon Models
+const CouponTemplate = require("./coupon/couponTemplate");
+const UserCoupon = require("./coupon/userCoupon");
+
 // RBAC Models
 const Role = require("./rbac/Role");
 const Permission = require("./rbac/Permission");
@@ -110,6 +114,28 @@ Goods.belongsTo(Store, { foreignKey: "store_id" });
 Store.hasMany(StorePhoto, { foreignKey: "store_id", as: "photos" });
 StorePhoto.belongsTo(Store, { foreignKey: "store_id" });
 
+/**
+ * 优惠券关联关系
+ */
+// 优惠券模板和门店
+CouponTemplate.belongsTo(Store, { foreignKey: "store_id" });
+Store.hasMany(CouponTemplate, { foreignKey: "store_id" });
+
+// 优惠券模板和创建者
+CouponTemplate.belongsTo(User, { as: "creator", foreignKey: "created_by" });
+
+// 优惠券模板和用户优惠券
+CouponTemplate.hasMany(UserCoupon, { foreignKey: "template_id" });
+UserCoupon.belongsTo(CouponTemplate, { as: "template", foreignKey: "template_id" });
+
+// 用户和用户优惠券
+User.hasMany(UserCoupon, { foreignKey: "user_id" });
+UserCoupon.belongsTo(User, { foreignKey: "user_id" });
+
+// 订单和用户优惠券
+Order.hasMany(UserCoupon, { foreignKey: "order_id" });
+UserCoupon.belongsTo(Order, { foreignKey: "order_id" });
+
 module.exports = {
   User,
   Store,
@@ -131,4 +157,6 @@ module.exports = {
   Topping,
   ProductSpecRel,
   Notice,
+  CouponTemplate,
+  UserCoupon,
 };

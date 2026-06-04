@@ -256,4 +256,60 @@ module.exports = {
     message: "门店参数有误",
     result: "",
   },
+  // 优惠券错误类型
+  couponFormError: {
+    code: "10800",
+    message: "优惠券参数有误",
+    result: "",
+  },
+  couponNotFoundError: {
+    code: "10801",
+    message: "优惠券不存在或已停用",
+    result: "",
+  },
+  couponExpiredError: {
+    code: "10802",
+    message: "优惠券已过期",
+    result: "",
+  },
+  couponSoldOutError: {
+    code: "10803",
+    message: "优惠券已领完",
+    result: "",
+  },
+  couponLimitError: {
+    code: "10804",
+    message: "已达到领取上限",
+    result: "",
+  },
+  couponAlreadyClaimedError: {
+    code: "10805",
+    message: "请勿重复领取",
+    result: "",
+  },
+  couponNotAvailableError: {
+    code: "10806",
+    message: "优惠券不可用",
+    result: "",
+  },
+  couponMinSpendError: {
+    code: "10807",
+    message: "未满足最低消费金额",
+    result: "",
+  },
+  couponStoreMismatchError: {
+    code: "10808",
+    message: "该优惠券不适用于当前门店",
+    result: "",
+  },
+  couponUsedError: {
+    code: "10809",
+    message: "优惠券已使用",
+    result: "",
+  },
+  couponTemplateError: {
+    code: "10810",
+    message: "创建优惠券失败",
+    result: "",
+  },
 };

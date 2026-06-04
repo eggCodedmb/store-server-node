@@ -1,14 +1,16 @@
 const Goods = require("../model/product/goods");
 const SpecOption = require("../model/product/specOption");
+const couponService = require("./couponService");
 const { Op } = require("sequelize");
 
 class SettlementService {
   /**
    * 核心价格计算逻辑 (唯一真理)
    * @param {Array} items - 订单项 [{ goods_id, spec_ids, quantity }]
-   * @returns {Promise<Object>} - { totalPrice, details }
+   * @param {Object} couponInfo - 优惠券信息 { coupon_id, store_id }（可选）
+   * @returns {Promise<Object>} - { totalPrice, discountAmount, originalPrice, details }
    */
-  async calculateFinalPrice(items) {
+  async calculateFinalPrice(items, couponInfo = null) {
     let totalPrice = 0;
     const details = [];
 
@@ -59,11 +61,33 @@ class SettlementService {
       });
     }
 
-    // 这里未来可以加入 满减、优惠券等逻辑
-    // totalPrice = applyDiscounts(totalPrice);
+    const originalPrice = totalPrice;
+    let discountAmount = 0;
+
+    // 4. 应用优惠券折扣
+    if (couponInfo && couponInfo.coupon_id) {
+      const userId = couponInfo.user_id;
+      const storeId = couponInfo.store_id || null;
+
+      const validation = await couponService.validateCoupon(
+        couponInfo.coupon_id,
+        userId,
+        totalPrice,
+        storeId
+      );
+
+      if (!validation.valid) {
+        throw new Error(validation.reason);
+      }
+
+      discountAmount = validation.discount_amount;
+      totalPrice = Math.max(0, totalPrice - discountAmount);
+    }
 
     return {
       total_price: totalPrice.toFixed(2),
+      discount_amount: discountAmount.toFixed(2),
+      original_price: originalPrice.toFixed(2),
       items: details,
     };
   }

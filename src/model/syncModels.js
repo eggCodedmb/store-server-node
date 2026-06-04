@@ -19,6 +19,8 @@ const {
   Topping,
   ProductSpecRel,
   Notice,
+  CouponTemplate,
+  UserCoupon,
 } = require("./index");
 const seq = require("../db/seq");
 
@@ -48,11 +50,15 @@ const syncModels = async () => {
     await SpecOption.sync({ force: true });
     await ProductSpecRel.sync({ force: true });
 
-    // 3. 同步业务模型
+    // 3. 同步优惠券模板（在 Order 之前，Order 依赖它）
+    await CouponTemplate.sync({ force: true });
+
+    // 4. 同步业务模型
     await Address.sync({ force: true });
     await Cart.sync({ force: true });
     await Order.sync({ force: true });
     await OrderItem.sync({ force: true });
+    await UserCoupon.sync({ force: true });
 
     // 重新启用外键检查
     await seq.query("SET FOREIGN_KEY_CHECKS = 1");
@@ -68,10 +74,12 @@ const syncModels = async () => {
 const dropModels = async () => {
   try {
     await seq.query("SET FOREIGN_KEY_CHECKS = 0");
+    await UserCoupon.drop();
     await OrderItem.drop();
     await Order.drop();
     await Cart.drop();
     await Address.drop();
+    await CouponTemplate.drop();
     await ProductSpecRel.drop();
     await SpecOption.drop();
     await Topping.drop();

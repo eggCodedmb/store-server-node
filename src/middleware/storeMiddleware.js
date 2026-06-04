@@ -4,8 +4,9 @@ const verifyStoreOwnership = async (ctx, next) => {
   const { id: user_id } = ctx.state.user;
   const store_id = ctx.params.id || ctx.request.body.store_id;
 
+  // store_id 为空时视为平台通用场景，跳过门店归属校验
   if (!store_id) {
-    ctx.app.emit("error", { code: 400, message: "缺少门店ID" }, ctx);
+    await next();
     return;
   }
 

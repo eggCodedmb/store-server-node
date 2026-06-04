@@ -50,6 +50,21 @@ const Order = seq.define(
       allowNull: true,
       comment: "取餐码",
     },
+    coupon_id: {
+      type: DataTypes.INTEGER,
+      allowNull: true,
+      comment: "使用的优惠券 id（user_coupons 表）",
+    },
+    discount_amount: {
+      type: DataTypes.DECIMAL(10, 2),
+      defaultValue: 0,
+      comment: "优惠金额",
+    },
+    original_price: {
+      type: DataTypes.DECIMAL(10, 2),
+      allowNull: true,
+      comment: "优惠前原价",
+    },
   },
   {
     timestamps: true, // 开启 Sequelize 自动添加的时间戳

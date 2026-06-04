@@ -155,6 +155,12 @@ class OrderService {
           res.pickup_code = "A" + code.toString().padStart(3, "0");
         }
 
+        // 如果订单取消（状态变为4），退还优惠券
+        if (status === 4 && res.coupon_id) {
+          const couponService = require("../service/couponService");
+          await couponService.refundCoupon(res.id);
+        }
+
         // 如果状态不再是待支付 (0)，则删除 Redis 中的超时键
         if (status !== 0) {
           const { delKey } = require("../utils/redis");

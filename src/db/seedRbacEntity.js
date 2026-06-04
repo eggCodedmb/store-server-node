@@ -22,6 +22,7 @@ const seedRBAC = async () => {
       { name: "订单管理", code: "/order_manage", type: 1, parent_id: 0 },
       { name: "地址管理", code: "/address_manage", type: 1, parent_id: 0 },
       { name: "门店管理", code: "/store_manage", type: 1, parent_id: 0 },
+      { name: "优惠券管理", code: "/coupon_manage", type: 1, parent_id: 0 },
       { name: "系统管理", code: "/system", type: 1, parent_id: 0 },
       { name: "角色管理", code: "/system/role", type: 1, parent_id: 8 }, // 根据顺序更新ID
       { name: "菜单管理", code: "/system/menu", type: 1, parent_id: 8 },
@@ -34,6 +35,8 @@ const seedRBAC = async () => {
       { name: "编辑门店按钮", code: "goods:edit_store", type: 2, parent_id: 4 },
       { name: "权限分配按钮", code: "user:assign_role_btn", type: 2, parent_id: 2 },
       { name: "分配权限按钮", code: "role:assign_perm_btn", type: 2, parent_id: 9 }, // system/role 的 id 是 9
+      { name: "添加优惠券按钮", code: "coupon:add_btn", type: 2, parent_id: 8 },
+      { name: "编辑优惠券按钮", code: "coupon:edit_btn", type: 2, parent_id: 8 },
       
       // 接口 (Type: 3)
       { name: "查询商品接口", code: "api:goods:all", type: 3, path: "/goods/", method: "GET", parent_id: 4 },
@@ -78,6 +81,13 @@ const seedRBAC = async () => {
       { name: "删除公告接口", code: "api:notice:delete", type: 3, path: "/notice/:id", method: "DELETE", parent_id: 10 },
 
       { name: "所有接口权限", code: "api:all", type: 3, path: "*", method: "*", parent_id: 0 },
+
+      // 优惠券管理接口
+      { name: "查询优惠券模板接口", code: "api:coupon:list", type: 3, path: "/coupon/template", method: "GET", parent_id: 8 },
+      { name: "创建优惠券模板接口", code: "api:coupon:create", type: 3, path: "/coupon/template", method: "POST", parent_id: 8 },
+      { name: "更新优惠券模板接口", code: "api:coupon:update", type: 3, path: "/coupon/template/:id", method: "PUT", parent_id: 8 },
+      { name: "停用优惠券模板接口", code: "api:coupon:delete", type: 3, path: "/coupon/template/:id", method: "DELETE", parent_id: 8 },
+      { name: "查看领取记录接口", code: "api:coupon:records", type: 3, path: "/coupon/template/:id/records", method: "GET", parent_id: 8 },
     ];
 
     const createdPerms = [];
@@ -102,6 +112,7 @@ const seedRBAC = async () => {
       { parent: "/system/notice", children: ["api:notice:list", "api:notice:create", "api:notice:update", "api:notice:delete"] },
       { parent: "/address_manage", children: ["api:address:all"] },
       { parent: "/store_manage", children: ["api:store:all", "api:store:create", "api:store:update", "api:store:delete"] },
+      { parent: "/coupon_manage", children: ["coupon:add_btn", "coupon:edit_btn", "api:coupon:list", "api:coupon:create", "api:coupon:update", "api:coupon:delete", "api:coupon:records"] },
     ];
 
     for (const rel of relations) {

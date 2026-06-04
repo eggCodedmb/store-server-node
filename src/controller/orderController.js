@@ -21,11 +21,19 @@ class OrderController {
    */
   async calculate(ctx) {
     try {
-      const { items } = ctx.request.body;
+      const { items, coupon_id, store_id } = ctx.request.body;
       if (!items || items.length === 0) {
         throw new Error("结算商品不能为空");
       }
-      const res = await settlementService.calculateFinalPrice(items);
+
+      // 如果传了优惠券，构建优惠券信息
+      let couponInfo = null;
+      if (coupon_id) {
+        const user_id = ctx.state.user.id;
+        couponInfo = { coupon_id, user_id, store_id: store_id || null };
+      }
+
+      const res = await settlementService.calculateFinalPrice(items, couponInfo);
       ctx.body = {
         code: 0,
         message: "计算成功",
@@ -183,7 +191,7 @@ class OrderController {
   async create_new(ctx) {
     try {
       const user_id = ctx.state.user.id;
-      const { items, order_type, address_id, remark } = ctx.request.body;
+      const { items, order_type, address_id, remark, coupon_id } = ctx.request.body;
 
       if (!items || items.length === 0) {
         throw new Error("购物车不能为空");
@@ -195,7 +203,17 @@ class OrderController {
         spec_ids: item.spec_ids || [],
         quantity: item.quantity
       }));
-      const settlement = await settlementService.calculateFinalPrice(calcItems);
+
+      // 如果传了优惠券，需要确定门店 ID（从商品中获取）
+      let couponInfo = null;
+      if (coupon_id) {
+        const Goods = require("../model/product/goods");
+        const firstGoods = await Goods.findByPk(calcItems[0].goods_id);
+        const storeId = firstGoods ? firstGoods.store_id : null;
+        couponInfo = { coupon_id, user_id, store_id: storeId };
+      }
+
+      const settlement = await settlementService.calculateFinalPrice(calcItems, couponInfo);
 
       const genid = new GenId({ WorkerId: 1 });
       const order_number = `YH${genid.NextId()}`;
@@ -208,17 +226,27 @@ class OrderController {
         state: 0, // 待支付
         order_type,
         remark,
+        coupon_id: coupon_id || null,
+        discount_amount: settlement.discount_amount,
+        original_price: settlement.original_price,
       };
-// 创建订单项数据
-const orderItems = settlement.items.map(item => ({
-  id: item.goods_id,
-  quantity: item.quantity,
-  price: item.unit_price,
-  specs: item.specs.map(s => s.name).join('/'),
-  spec_ids: item.specs.map(s => s.id).join(',') // 新增：保存规格ID列表
-}));
+      // 创建订单项数据
+      const orderItems = settlement.items.map(item => ({
+        id: item.goods_id,
+        quantity: item.quantity,
+        price: item.unit_price,
+        specs: item.specs.map(s => s.name).join('/'),
+        spec_ids: item.specs.map(s => s.id).join(',') // 新增：保存规格ID列表
+      }));
 
       const res = await createOrder(orderData, orderItems);
+
+      // 核销优惠券
+      if (coupon_id) {
+        const couponService = require("../service/couponService");
+        await couponService.useCoupon(coupon_id, res.id);
+      }
+
       const { ORDER_TIMEOUT } = require("../config/config.default");
       const timeoutMinutes = parseInt(ORDER_TIMEOUT) || 15;
 
