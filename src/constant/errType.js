@@ -312,4 +312,25 @@ module.exports = {
     message: "创建优惠券失败",
     result: "",
   },
+  // 签到错误类型
+  checkinFormError: {
+    code: "10900",
+    message: "签到参数有误",
+    result: "",
+  },
+  checkinAlreadyDoneError: {
+    code: "10901",
+    message: "今日已签到，请勿重复",
+    result: "",
+  },
+  checkinRewardConfigError: {
+    code: "10902",
+    message: "签到奖励配置有误",
+    result: "",
+  },
+  checkinTemplateMissingError: {
+    code: "10903",
+    message: "签到奖励优惠券模板不存在或已停用",
+    result: "",
+  },
 };

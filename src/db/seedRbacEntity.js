@@ -23,6 +23,7 @@ const seedRBAC = async () => {
       { name: "地址管理", code: "/address_manage", type: 1, parent_id: 0 },
       { name: "门店管理", code: "/store_manage", type: 1, parent_id: 0 },
       { name: "优惠券管理", code: "/coupon_manage", type: 1, parent_id: 0 },
+      { name: "活动管理", code: "/checkin_manage", type: 1, parent_id: 0 },
       { name: "系统管理", code: "/system", type: 1, parent_id: 0 },
       { name: "角色管理", code: "/system/role", type: 1, parent_id: 8 }, // 根据顺序更新ID
       { name: "菜单管理", code: "/system/menu", type: 1, parent_id: 8 },
@@ -88,6 +89,11 @@ const seedRBAC = async () => {
       { name: "更新优惠券模板接口", code: "api:coupon:update", type: 3, path: "/coupon/template/:id", method: "PUT", parent_id: 8 },
       { name: "停用优惠券模板接口", code: "api:coupon:delete", type: 3, path: "/coupon/template/:id", method: "DELETE", parent_id: 8 },
       { name: "查看领取记录接口", code: "api:coupon:records", type: 3, path: "/coupon/template/:id/records", method: "GET", parent_id: 8 },
+
+      // 签到管理接口
+      { name: "查询签到奖励配置接口", code: "api:checkin:rewards_get", type: 3, path: "/checkin/rewards", method: "GET", parent_id: 9 },
+      { name: "更新签到奖励配置接口", code: "api:checkin:rewards_put", type: 3, path: "/checkin/rewards", method: "PUT", parent_id: 9 },
+      { name: "查询签到记录接口", code: "api:checkin:records", type: 3, path: "/checkin/records", method: "GET", parent_id: 9 },
     ];
 
     const createdPerms = [];
@@ -113,6 +119,7 @@ const seedRBAC = async () => {
       { parent: "/address_manage", children: ["api:address:all"] },
       { parent: "/store_manage", children: ["api:store:all", "api:store:create", "api:store:update", "api:store:delete"] },
       { parent: "/coupon_manage", children: ["coupon:add_btn", "coupon:edit_btn", "api:coupon:list", "api:coupon:create", "api:coupon:update", "api:coupon:delete", "api:coupon:records"] },
+      { parent: "/checkin_manage", children: ["api:checkin:rewards_get", "api:checkin:rewards_put", "api:checkin:records"] },
     ];
 
     for (const rel of relations) {

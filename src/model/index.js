@@ -18,6 +18,10 @@ const StorePhoto = require("./store/storePhoto");
 const CouponTemplate = require("./coupon/couponTemplate");
 const UserCoupon = require("./coupon/userCoupon");
 
+// Checkin Models
+const CheckinReward = require("./checkin/checkinReward");
+const CheckinRecord = require("./checkin/checkinRecord");
+
 // RBAC Models
 const Role = require("./rbac/Role");
 const Permission = require("./rbac/Permission");
@@ -136,6 +140,20 @@ UserCoupon.belongsTo(User, { foreignKey: "user_id" });
 Order.hasMany(UserCoupon, { foreignKey: "order_id" });
 UserCoupon.belongsTo(Order, { foreignKey: "order_id" });
 
+/**
+ * 签到关联关系
+ */
+// 签到奖励配置和优惠券模板
+CheckinReward.belongsTo(CouponTemplate, { foreignKey: "template_id" });
+CouponTemplate.hasMany(CheckinReward, { foreignKey: "template_id" });
+
+// 签到记录和用户
+CheckinRecord.belongsTo(User, { foreignKey: "user_id" });
+User.hasMany(CheckinRecord, { foreignKey: "user_id" });
+
+// 签到记录和用户优惠券
+CheckinRecord.belongsTo(UserCoupon, { as: "coupon", foreignKey: "coupon_id" });
+
 module.exports = {
   User,
   Store,
@@ -159,4 +177,6 @@ module.exports = {
   Notice,
   CouponTemplate,
   UserCoupon,
+  CheckinReward,
+  CheckinRecord,
 };
