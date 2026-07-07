@@ -1,6 +1,6 @@
 const fs = require("fs");
 const Router = require("koa-router");
-const router = new Router();
+const router = new Router({ prefix: "/api" });
 
 // 读取当前目录中的所有文件
 fs.readdirSync(__dirname).forEach((file) => {
