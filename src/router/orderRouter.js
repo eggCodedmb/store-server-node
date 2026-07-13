@@ -9,6 +9,7 @@ const {
   getOneOrder,
   create_new,
   pay_order,
+  pay_success,
   getMyOrders,
   calculate,
   checkStock,
@@ -27,6 +28,7 @@ router.post("/check_stock", auth, checkStock);
 // 益禾堂小程序新接口
 router.post("/create_new", auth, create_new);
 router.post("/pay", auth, pay_order);
+router.post("/pay_success", auth, pay_success);
 router.get("/my_list", auth, getMyOrders);
 
 router.get(

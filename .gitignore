@@ -12,3 +12,4 @@ src/public/minio/*.png
 src/public/minio/*.jpeg
 src/public/minio/*.jpg
 .vercel
+.mimocode/.cron-lock

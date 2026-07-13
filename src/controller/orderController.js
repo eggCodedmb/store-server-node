@@ -111,6 +111,7 @@ class OrderController {
     try {
       const user_id = ctx.state.user.id;
       let data = ctx.request.body.data;
+      const pay_type = ctx.request.body.pay_type;
 
       if (!data || data.length === 0) {
         return ctx.app.emit("error", creatOrderError, ctx);
@@ -139,6 +140,7 @@ class OrderController {
         total_price: settlement.total_price,
         state: 0,
         order_number,
+        pay_type: pay_type || 1,
       };
       
       // 组合订单项
@@ -191,7 +193,7 @@ class OrderController {
   async create_new(ctx) {
     try {
       const user_id = ctx.state.user.id;
-      const { items, order_type, address_id, remark, coupon_id } = ctx.request.body;
+      const { items, order_type, address_id, remark, coupon_id, pay_type } = ctx.request.body;
 
       if (!items || items.length === 0) {
         throw new Error("购物车不能为空");
@@ -224,6 +226,7 @@ class OrderController {
         total_price: settlement.total_price,
         order_number,
         state: 0, // 待支付
+        pay_type: pay_type || 1,
         order_type,
         remark,
         coupon_id: coupon_id || null,
@@ -282,8 +285,26 @@ class OrderController {
    */
   async pay_order(ctx) {
     try {
-      const { id } = ctx.request.body;
-      const res = await updateOrderStatus(id, 1); // 1: 制作中/已支付
+      const { id, pay_type } = ctx.request.body;
+      const res = await updateOrderStatus(id, 1, pay_type); // 1: 制作中/已支付
+      if (res) {
+        ctx.body = { code: 0, message: "支付成功", result: res };
+      } else {
+        ctx.body = { code: 404, message: "订单不存在" };
+      }
+    } catch (error) {
+      console.error(error);
+      ctx.body = { code: 500, message: "支付失败" };
+    }
+  }
+
+  /**
+   * 支付成功回调接口
+   */
+  async pay_success(ctx) {
+    try {
+      const { id, pay_type } = ctx.request.body;
+      const res = await updateOrderStatus(id, 1, pay_type); // 1: 制作中/已支付
       if (res) {
         ctx.body = { code: 0, message: "支付成功", result: res };
       } else {
@@ -360,8 +381,8 @@ class OrderController {
   async updateStatus(ctx) {
     try {
       const { id } = ctx.request.params;
-      const { state } = ctx.request.body;
-      const res = await updateOrderStatus(id, state);
+      const { state, pay_type } = ctx.request.body;
+      const res = await updateOrderStatus(id, state, pay_type);
       if (res) {
         ctx.body = {
           code: 0,

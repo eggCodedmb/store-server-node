@@ -124,9 +124,9 @@ module.exports = {
     goods_img: {
       type: "string",
       required: true,
-      format: /^https?:\/\/.+(\.jpg|\.jpeg|\.png|\.gif)$/,
+      format: /^(https?:\/\/|\/).+(\.jpg|\.jpeg|\.png|\.gif)$/,
       description:
-        "商品图片链接，必须是有效的 URL 地址，并且是图片格式（jpg, jpeg, png, gif）",
+        "商品图片链接，必须是有效的 URL 或相对路径，并且是图片格式（jpg, jpeg, png, gif）",
     },
     goods_detail: {
       type: "string",

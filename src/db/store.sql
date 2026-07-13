@@ -97,6 +97,7 @@ CREATE TABLE `orders`  (
   `total_price` decimal(10, 2) NOT NULL COMMENT '订单总价',
   `order_number` varchar(16) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL COMMENT '订单编号',
   `state` tinyint(4) NOT NULL COMMENT '订单状态',
+  `pay_type` tinyint(4) NULL DEFAULT 1 COMMENT '支付方式 (1: 微信支付, 2: 支付宝, 3: 云闪付)',
   `createdAt` datetime NOT NULL,
   `updatedAt` datetime NOT NULL,
   PRIMARY KEY (`id`) USING BTREE,

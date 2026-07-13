@@ -1,4 +1,5 @@
 const Minio = require("minio");
+const path = require("path");
 const {
   STORAGE_HOST,
   STORAGE_BUCKET,
@@ -57,8 +58,27 @@ function bucketExists() {
             console.log("桶创建失败", err);
             resolve(false);
           } else {
-            console.log("桶创建成功");
-            resolve(true);
+            console.log("桶创建成功，开始设置公开读策略...");
+            const policy = JSON.stringify({
+              Version: "2012-10-17",
+              Statement: [
+                {
+                  Effect: "Allow",
+                  Principal: { AWS: ["*"] },
+                  Action: ["s3:GetObject"],
+                  Resource: [`arn:aws:s3:::${STORAGE_BUCKET}/*`],
+                },
+              ],
+            });
+            minioClient.setBucketPolicy(STORAGE_BUCKET, policy, function (err) {
+              if (err) {
+                console.log("桶公开读策略设置失败", err);
+                resolve(false);
+              } else {
+                console.log("桶公开读策略设置成功");
+                resolve(true);
+              }
+            });
           }
         });
       }
@@ -67,12 +87,23 @@ function bucketExists() {
 }
 
 function upload(filePath) {
+  const ext = path.extname(filePath).toLowerCase();
+  const mimeTypes = {
+    ".png": "image/png",
+    ".jpg": "image/jpeg",
+    ".jpeg": "image/jpeg",
+    ".gif": "image/gif",
+    ".svg": "image/svg+xml",
+    ".bmp": "image/bmp",
+  };
+  const contentType = mimeTypes[ext] || "application/octet-stream";
+
   const metaData = {
-    "Content-Type": "application/octet-stream",
+    "Content-Type": contentType,
     "X-Amz-Meta-Testing": 1234,
     example: 5678,
   };
-  const fileName = generateRandomFileName(12);
+  const fileName = `${generateRandomFileName(12)}${ext}`;
   return new Promise((resolve) => {
     minioClient.fPutObject(
       STORAGE_BUCKET,

@@ -157,7 +157,7 @@ class OrderService {
     }
   }
 
-  async updateOrderStatus(id, status) {
+  async updateOrderStatus(id, status, pay_type) {
     try {
       const res = await Order.findByPk(id);
       if (res) {
@@ -184,6 +184,10 @@ class OrderService {
         if (status !== 0) {
           const { delKey } = require("../utils/redis");
           await delKey(`order_timeout:${id}`);
+        }
+
+        if (pay_type !== undefined && pay_type !== null) {
+          res.pay_type = pay_type;
         }
 
         res.state = status;

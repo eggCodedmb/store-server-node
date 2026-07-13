@@ -39,6 +39,12 @@ const Order = seq.define(
       allowNull: false,
       comment: "订单状态",
     },
+    pay_type: {
+      type: DataTypes.TINYINT,
+      allowNull: true,
+      defaultValue: 1,
+      comment: "支付方式 (1: 微信支付, 2: 支付宝, 3: 云闪付)",
+    },
     order_type: {
       type: DataTypes.TINYINT,
       allowNull: false,
