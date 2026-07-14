@@ -14,6 +14,8 @@ const Province = seq.define("Province", {
 }, {
   tableName: "province",
   timestamps: false,
+  charset: "utf8mb4",
+  collate: "utf8mb4_unicode_ci",
 });
 
 module.exports = Province;

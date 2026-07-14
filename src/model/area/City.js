@@ -23,6 +23,8 @@ const City = seq.define("City", {
 }, {
   tableName: "city",
   timestamps: false,
+  charset: "utf8mb4",
+  collate: "utf8mb4_unicode_ci",
 });
 
 // 建立关联

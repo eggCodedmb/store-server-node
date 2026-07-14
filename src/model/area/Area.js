@@ -32,6 +32,8 @@ const Area = seq.define("Area", {
 }, {
   tableName: "area",
   timestamps: false,
+  charset: "utf8mb4",
+  collate: "utf8mb4_unicode_ci",
 });
 
 // 建立关联
