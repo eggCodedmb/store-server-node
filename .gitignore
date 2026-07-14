@@ -13,3 +13,4 @@ src/public/minio/*.jpeg
 src/public/minio/*.jpg
 .vercel
 .mimocode/.cron-lock
+备份/store_2026-07-14T05-07-36.sql

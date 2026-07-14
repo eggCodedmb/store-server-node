@@ -13,6 +13,7 @@ const {
   claimCoupon,
   getMyCoupons,
   previewCoupon,
+  exchangeCoupon,
 } = require("../controller/couponController");
 const {
   createCouponTemplateRules,
@@ -35,6 +36,14 @@ router.post(
   validateParams({ id: { type: "integer", required: true } }, couponFormError),
   auth,
   claimCoupon
+);
+
+// 积分兑换优惠券
+router.post(
+  "/exchange",
+  validateParams({ templateId: { type: "integer", required: true } }, couponFormError),
+  auth,
+  exchangeCoupon
 );
 
 // 查询我的优惠券

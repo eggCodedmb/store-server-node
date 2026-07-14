@@ -55,6 +55,18 @@ const User = seq.define(
       allowNull: true,
       comment: "所属门店(部门)ID",
     },
+    points: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+      defaultValue: 0,
+      comment: "用户积分",
+    },
+    level: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+      defaultValue: 1,
+      comment: "用户会员等级 (1-10)",
+    },
   },
   {
     timestamps: true, // 关闭 Sequelize 自动添加的时间戳

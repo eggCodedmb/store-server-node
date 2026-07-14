@@ -161,6 +161,21 @@ class CouponController {
       ctx.body = { code: 500, message: error.message };
     }
   }
+
+  /**
+   * 积分兑换优惠券
+   */
+  async exchangeCoupon(ctx) {
+    try {
+      const user_id = ctx.state.user.id;
+      const { templateId } = ctx.request.body;
+      const res = await couponService.exchangeCoupon(templateId, user_id);
+      ctx.body = { code: 0, message: "兑换成功", result: res };
+    } catch (error) {
+      console.error(error);
+      ctx.body = { code: 500, message: error.message };
+    }
+  }
 }
 
 module.exports = new CouponController();

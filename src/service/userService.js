@@ -81,6 +81,8 @@ class UserService {
         user_name: `wx_${openid.slice(-10)}`,
         password: "", // 微信登录用户密码为空
         email: "",    // 微信登录用户邮箱为空
+        points: 0,
+        level: 1,
       },
     });
     return user.dataValues;
@@ -93,7 +95,7 @@ class UserService {
    * @returns {Promise<boolean>} 返回更新是否成功
    */
   async updateById(id, data) {
-    const { email, avatar, nick_name, password, store_ids } = data || {};
+    const { email, avatar, nick_name, password, store_ids, points, level } = data || {};
     const seq = require("../db/seq");
     const transaction = await seq.transaction();
 
@@ -105,6 +107,18 @@ class UserService {
         ...(nick_name && { nick_name }),
         ...(password && { password }),
       };
+
+      if (points !== undefined) {
+        userData.points = points;
+        if (level !== undefined) {
+          userData.level = level;
+        } else {
+          const { calculateLevel } = require("../utils/level");
+          userData.level = calculateLevel(points);
+        }
+      } else if (level !== undefined) {
+        userData.level = level;
+      }
       
       await User.update(userData, { where: { id }, transaction });
 

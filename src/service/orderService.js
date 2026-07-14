@@ -167,6 +167,8 @@ class OrderService {
           throw orderExpiredError;
         }
 
+        const previousState = res.state;
+
         // 如果是更新为已支付状态 (1) 且是自提订单 (1) 且还没有取餐码
         if (status === 1 && res.order_type === 1 && !res.pickup_code) {
           const { getNextPickupCode } = require("../utils/redis");
@@ -192,6 +194,27 @@ class OrderService {
 
         res.state = status;
         await res.save();
+
+        // 订单支付成功逻辑：从未支付 (0) 变为已支付 (1)
+        if (status === 1 && previousState === 0) {
+          const addedPoints = Math.floor(parseFloat(res.total_price));
+          if (addedPoints > 0) {
+            const { User } = require("../model/index");
+            const { calculateLevel } = require("../utils/level");
+            const user = await User.findByPk(res.user_id);
+            if (user) {
+              const currentPoints = user.points || 0;
+              const newPoints = currentPoints + addedPoints;
+              const newLevel = calculateLevel(newPoints);
+              
+              user.points = newPoints;
+              user.level = newLevel;
+              await user.save();
+              console.log(`[积分系统] 用户 ID: ${user.id} 支付订单成功，金额: ${res.total_price}，新增积分: ${addedPoints}，当前总积分: ${newPoints}，会员等级提升至: V${newLevel}`);
+            }
+          }
+        }
+
         return res;
       }
       return null;

@@ -100,6 +100,9 @@ module.exports = {
     email: { type: "string", required: false, format: newEmailRules },
     password: { type: "string", required: false },
     avatar: { type: "string", required: false },
+    points: { type: "integer", required: false },
+    level: { type: "integer", required: false },
+    store_ids: { type: "array", itemType: "integer", required: false },
   },
   // 商品
   goodsFormatRules: {

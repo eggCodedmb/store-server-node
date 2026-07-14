@@ -8,25 +8,37 @@ const { Op } = require("sequelize");
 
 class CheckinService {
   /**
-   * 获取今天的日期字符串 (YYYY-MM-DD)
+   * 获取今天的日期字符串 (YYYY-MM-DD, 强制东八区/北京时间时区)
    */
   getToday() {
-    const now = new Date();
-    const y = now.getFullYear();
-    const m = String(now.getMonth() + 1).padStart(2, "0");
-    const d = String(now.getDate()).padStart(2, "0");
+    const formatter = new Intl.DateTimeFormat("zh-CN", {
+      timeZone: "Asia/Shanghai",
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+    });
+    const parts = formatter.formatToParts(new Date());
+    const y = parts.find(p => p.type === "year").value;
+    const m = parts.find(p => p.type === "month").value;
+    const d = parts.find(p => p.type === "day").value;
     return `${y}-${m}-${d}`;
   }
 
   /**
-   * 获取昨天的日期字符串 (YYYY-MM-DD)
+   * 获取昨天的日期字符串 (YYYY-MM-DD, 强制东八区/北京时间时区)
    */
   getYesterday() {
-    const now = new Date();
-    now.setDate(now.getDate() - 1);
-    const y = now.getFullYear();
-    const m = String(now.getMonth() + 1).padStart(2, "0");
-    const d = String(now.getDate()).padStart(2, "0");
+    const formatter = new Intl.DateTimeFormat("zh-CN", {
+      timeZone: "Asia/Shanghai",
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+    });
+    const yesterday = new Date(Date.now() - 24 * 60 * 60 * 1000);
+    const parts = formatter.formatToParts(yesterday);
+    const y = parts.find(p => p.type === "year").value;
+    const m = parts.find(p => p.type === "month").value;
+    const d = parts.find(p => p.type === "day").value;
     return `${y}-${m}-${d}`;
   }
 
@@ -171,18 +183,20 @@ class CheckinService {
 
     // 从最近记录开始，连续计算天数
     let streak = 0;
-    let expectedDate = new Date(latestDate);
+    // 使用 UTC 解释和计算日期，避免服务器本地时区干扰
+    let expectedDate = new Date(latestDate + "T00:00:00Z");
 
     for (const record of records) {
       const recordDate = record.checkin_date;
-      const y = expectedDate.getFullYear();
-      const m = String(expectedDate.getMonth() + 1).padStart(2, "0");
-      const d = String(expectedDate.getDate()).padStart(2, "0");
+      const y = expectedDate.getUTCFullYear();
+      const m = String(expectedDate.getUTCMonth() + 1).padStart(2, "0");
+      const d = String(expectedDate.getUTCDate()).padStart(2, "0");
       const expected = `${y}-${m}-${d}`;
 
       if (recordDate === expected) {
         streak++;
-        expectedDate.setDate(expectedDate.getDate() - 1);
+        // 递减一天（在 UTC 下操作）
+        expectedDate.setUTCDate(expectedDate.getUTCDate() - 1);
       } else {
         break;
       }

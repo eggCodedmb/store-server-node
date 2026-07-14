@@ -232,6 +232,94 @@ class CouponService {
   }
 
   /**
+   * 积分兑换优惠券
+   * @param {number} templateId
+   * @param {number} userId
+   */
+  async exchangeCoupon(templateId, userId) {
+    const transaction = await seq.transaction();
+    try {
+      const now = new Date();
+      // 1. 获取优惠券模板
+      const template = await CouponTemplate.findByPk(templateId, { transaction });
+      if (!template) {
+        throw new Error("优惠券不存在");
+      }
+      if (template.status !== 1) {
+        throw new Error("优惠券未启用");
+      }
+      if (template.start_time > now || template.end_time < now) {
+        throw new Error("优惠券不在有效期内");
+      }
+
+      // 2. 检查总量限制
+      if (template.total_count !== -1 && template.claimed_count >= template.total_count) {
+        throw new Error("优惠券已被领完");
+      }
+
+      // 3. 检查个人限制
+      const userClaimedCount = await UserCoupon.count({
+        where: {
+          user_id: userId,
+          template_id: templateId,
+        },
+        transaction,
+      });
+
+      if (userClaimedCount >= template.per_user_limit) {
+        throw new Error("已达到兑换上限");
+      }
+
+      // 4. 计算并核对积分 (按照面额的 10 倍计算积分)
+      const pointsRequired = Math.floor(parseFloat(template.value) * 10);
+      if (pointsRequired <= 0) {
+        throw new Error("兑换配置错误");
+      }
+
+      const User = require("../model/user/user");
+      const { calculateLevel } = require("../utils/level");
+      const user = await User.findByPk(userId, { transaction });
+      if (!user) {
+        throw new Error("用户不存在");
+      }
+
+      if ((user.points || 0) < pointsRequired) {
+        throw new Error("积分不足，无法兑换");
+      }
+
+      // 5. 扣减用户积分并重算等级
+      user.points = (user.points || 0) - pointsRequired;
+      user.level = calculateLevel(user.points);
+      await user.save({ transaction });
+
+      // 6. 创建用户优惠券
+      const userCoupon = await UserCoupon.create(
+        {
+          user_id: userId,
+          template_id: templateId,
+          status: 0,
+          claimed_at: now,
+        },
+        { transaction }
+      );
+
+      // 7. 更新已领取数量
+      template.claimed_count += 1;
+      await template.save({ transaction });
+
+      await transaction.commit();
+      return {
+        userCoupon,
+        remainingPoints: user.points,
+        level: user.level
+      };
+    } catch (error) {
+      await transaction.rollback();
+      throw error;
+    }
+  }
+
+  /**
    * 查询用户的优惠券列表
    * @param {number} userId
    * @param {number|null} status - 筛选状态
