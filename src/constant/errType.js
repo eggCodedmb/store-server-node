@@ -250,4 +250,118 @@ module.exports = {
     message: "您没有权限执行此操作",
     result: "",
   },
+  // 门店错误类型
+  storeFormatError: {
+    code: "10701",
+    message: "门店参数有误",
+    result: "",
+  },
+  // 优惠券错误类型
+  couponFormError: {
+    code: "10800",
+    message: "优惠券参数有误",
+    result: "",
+  },
+  couponNotFoundError: {
+    code: "10801",
+    message: "优惠券不存在或已停用",
+    result: "",
+  },
+  couponExpiredError: {
+    code: "10802",
+    message: "优惠券已过期",
+    result: "",
+  },
+  couponSoldOutError: {
+    code: "10803",
+    message: "优惠券已领完",
+    result: "",
+  },
+  couponLimitError: {
+    code: "10804",
+    message: "已达到领取上限",
+    result: "",
+  },
+  couponAlreadyClaimedError: {
+    code: "10805",
+    message: "请勿重复领取",
+    result: "",
+  },
+  couponNotAvailableError: {
+    code: "10806",
+    message: "优惠券不可用",
+    result: "",
+  },
+  couponMinSpendError: {
+    code: "10807",
+    message: "未满足最低消费金额",
+    result: "",
+  },
+  couponStoreMismatchError: {
+    code: "10808",
+    message: "该优惠券不适用于当前门店",
+    result: "",
+  },
+  couponUsedError: {
+    code: "10809",
+    message: "优惠券已使用",
+    result: "",
+  },
+  couponTemplateError: {
+    code: "10810",
+    message: "创建优惠券失败",
+    result: "",
+  },
+  // 签到错误类型
+  checkinFormError: {
+    code: "10900",
+    message: "签到参数有误",
+    result: "",
+  },
+  checkinAlreadyDoneError: {
+    code: "10901",
+    message: "今日已签到，请勿重复",
+    result: "",
+  },
+  checkinRewardConfigError: {
+    code: "10902",
+    message: "签到奖励配置有误",
+    result: "",
+  },
+  checkinTemplateMissingError: {
+    code: "10903",
+    message: "签到奖励优惠券模板不存在或已停用",
+    result: "",
+  },
+  // Banner 错误类型
+  bannerFormatError: {
+    code: "11000",
+    message: "Banner参数有误",
+    result: "",
+  },
+  bannerCreateError: {
+    code: "11001",
+    message: "创建Banner失败",
+    result: "",
+  },
+  bannerUpdateError: {
+    code: "11002",
+    message: "更新Banner失败",
+    result: "",
+  },
+  bannerDeleteError: {
+    code: "11003",
+    message: "删除Banner失败",
+    result: "",
+  },
+  bannerNotFoundError: {
+    code: "11004",
+    message: "Banner不存在",
+    result: "",
+  },
+  bannerListError: {
+    code: "11005",
+    message: "获取Banner列表失败",
+    result: "",
+  },
 };

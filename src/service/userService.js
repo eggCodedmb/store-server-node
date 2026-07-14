@@ -81,6 +81,8 @@ class UserService {
         user_name: `wx_${openid.slice(-10)}`,
         password: "", // 微信登录用户密码为空
         email: "",    // 微信登录用户邮箱为空
+        points: 0,
+        level: 1,
       },
     });
     return user.dataValues;
@@ -93,7 +95,7 @@ class UserService {
    * @returns {Promise<boolean>} 返回更新是否成功
    */
   async updateById(id, data) {
-    const { email, avatar, nick_name, password, store_ids } = data || {};
+    const { email, avatar, nick_name, password, store_ids, points, level } = data || {};
     const seq = require("../db/seq");
     const transaction = await seq.transaction();
 
@@ -105,6 +107,18 @@ class UserService {
         ...(nick_name && { nick_name }),
         ...(password && { password }),
       };
+
+      if (points !== undefined) {
+        userData.points = points;
+        if (level !== undefined) {
+          userData.level = level;
+        } else {
+          const { calculateLevel } = require("../utils/level");
+          userData.level = calculateLevel(points);
+        }
+      } else if (level !== undefined) {
+        userData.level = level;
+      }
       
       await User.update(userData, { where: { id }, transaction });
 
@@ -127,13 +141,42 @@ class UserService {
    * 查询所有用户
    * @param {number} [pageSize=20] - 每页大小
    * @param {number} [pageNum=1] - 页码
-   * @returns {Promise<Array<Object>>} - 返回用户数据数组
+   * @param {Object} [filters={}] - 过滤条件
+   * @param {string} [filters.keyword] - 关键词搜索(用户名/昵称/邮箱)
+   * @param {string} [filters.user_name] - 用户名精确匹配
+   * @param {string} [filters.nick_name] - 昵称模糊匹配
+   * @param {string} [filters.email] - 邮箱精确匹配
+   * @returns {Promise<Object>} - 返回分页用户数据
    */
-  async findAllUser(pageSize = 20, pageNum = 1) {
+  async findAllUser(pageSize = 20, pageNum = 1, filters = {}) {
     try {
       const { Store } = require("../model/index");
       const offset = (pageNum - 1) * pageSize;
+
+      // 构建查询条件
+      const whereOpt = {};
+      if (filters.keyword) {
+        whereOpt[Op.or] = [
+          { user_name: { [Op.like]: `%${filters.keyword}%` } },
+          { nick_name: { [Op.like]: `%${filters.keyword}%` } },
+          { email: { [Op.like]: `%${filters.keyword}%` } },
+        ];
+      }
+      if (filters.user_name) {
+        whereOpt.user_name = filters.user_name;
+      }
+      if (filters.nick_name) {
+        whereOpt.nick_name = { [Op.like]: `%${filters.nick_name}%` };
+      }
+      if (filters.email) {
+        whereOpt.email = filters.email;
+      }
+
+      console.log("[findAllUser] filters:", filters);
+      console.log("[findAllUser] whereOpt:", JSON.stringify(whereOpt, (k, v) => (typeof v === "symbol" ? v.toString() : v)));
+
       const { count, rows } = await User.findAndCountAll({
+        where: whereOpt,
         attributes: { exclude: ["password"] },
         include: [
           {

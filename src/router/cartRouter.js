@@ -10,6 +10,7 @@ const {
   updateOneChecke,
   remove,
   selectALll,
+  getTotalPrice,
 } = require("../controller/cartController");
 
 const { cartFormatError } = require("../constant/errType");
@@ -29,6 +30,8 @@ router.post(
 );
 
 router.get("/", auth, findAll);
+
+router.get("/total", auth, getTotalPrice);
 
 router.patch("/check", auth, updateOneChecke);
 

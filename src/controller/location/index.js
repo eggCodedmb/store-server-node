@@ -4,6 +4,7 @@ const {
   queryAreas,
   queryStreets,
   queryVillages,
+  queryAllRegions,
 } = require("../../service/location");
 class LocationController {
   async getProvinces(ctx) {
@@ -65,6 +66,18 @@ class LocationController {
         code: 0,
         message: "成功",
         result: villages,
+      };
+    } catch (error) {
+      throw error;
+    }
+  }
+  async getAllRegions(ctx) {
+    try {
+      const allRegions = await queryAllRegions();
+      ctx.body = {
+        code: 0,
+        message: "成功",
+        result: allRegions,
       };
     } catch (error) {
       throw error;

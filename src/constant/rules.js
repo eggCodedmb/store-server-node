@@ -100,6 +100,9 @@ module.exports = {
     email: { type: "string", required: false, format: newEmailRules },
     password: { type: "string", required: false },
     avatar: { type: "string", required: false },
+    points: { type: "integer", required: false },
+    level: { type: "integer", required: false },
+    store_ids: { type: "array", itemType: "integer", required: false },
   },
   // 商品
   goodsFormatRules: {
@@ -124,14 +127,19 @@ module.exports = {
     goods_img: {
       type: "string",
       required: true,
-      format: /^https?:\/\/.+(\.jpg|\.jpeg|\.png|\.gif)$/,
+      format: /^(https?:\/\/|\/).+(\.jpg|\.jpeg|\.png|\.gif)$/,
       description:
-        "商品图片链接，必须是有效的 URL 地址，并且是图片格式（jpg, jpeg, png, gif）",
+        "商品图片链接，必须是有效的 URL 或相对路径，并且是图片格式（jpg, jpeg, png, gif）",
     },
     goods_detail: {
       type: "string",
       required: false,
       description: "商品详情介绍，可选字符串",
+    },
+    store_id: {
+      type: "integer",
+      required: true,
+      description: "所属门店 ID，必填",
     },
     specs: {
       type: "array",
@@ -221,6 +229,17 @@ module.exports = {
       required: true,
       description: "商品 ID，必须是整数且必填",
     },
+    specs: {
+      type: "string",
+      required: false,
+      allowEmpty: true,
+      description: "商品规格快照",
+    },
+    store_id: {
+      type: "integer",
+      required: false,
+      description: "当前门店 ID，选填",
+    },
   },
   cartSelectRules: {
     id: {
@@ -241,9 +260,34 @@ module.exports = {
       required: true,
       description: "商品数量，必须是整数且必填",
     },
+    store_id: {
+      type: "integer",
+      required: false,
+      description: "当前门店 ID，选填",
+    },
   },
   // 购物车删除 数据类型[1,2,3]
   cartDeleteRules: {
     ids: { type: "array", itemType: "integer", required: true },
+  },
+  // 门店
+  storeFormatRules: {
+    name: {
+      type: "string",
+      required: true,
+      description: "门店名称，必填",
+    },
+    longitude: {
+      type: "number",
+      required: false,
+    },
+    latitude: {
+      type: "number",
+      required: false,
+    },
+    phone: {
+      type: "string",
+      required: false,
+    },
   },
 };

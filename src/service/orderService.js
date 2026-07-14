@@ -2,6 +2,9 @@ const Order = require("../model/order/order");
 const OrderItem = require("../model/order/orderItem");
 const Goods = require("../model/product/goods");
 const Address = require("../model/address/address");
+const User = require("../model/user/user");
+const UserCoupon = require("../model/coupon/userCoupon");
+const CouponTemplate = require("../model/coupon/couponTemplate");
 const Store = require("../model/store/store");
 const seq = require("../db/seq");
 const { Op } = require("sequelize");
@@ -27,7 +30,8 @@ class OrderService {
         goods_id: +item.id,
         price: item.price || item.goods_price || 0, // 兼容新旧接口的 price 字段
         quantity: item.quantity,
-        specs: item.specs || null // 兼容新接口的 specs 字段
+        specs: item.specs || null, // 兼容新接口的 specs 字段
+        spec_ids: item.spec_ids || null // 新增：保存规格ID列表
       }));
 
       const orderService = new OrderService();
@@ -41,7 +45,7 @@ class OrderService {
     } catch (error) {
       await transaction.rollback();
       console.error("创建订单失败:", error);
-      throw new Error("创建订单失败");
+      throw error; // 保留原始错误信息（如 "库存不足"、"商品不存在"）
     }
   }
   /**
@@ -101,6 +105,27 @@ class OrderService {
             model: Store,
             attributes: ["id", "name", "address", "phone"],
           },
+          {
+            model: User,
+            as: "user",
+            attributes: ["id", "nick_name", "user_name", "avatar"],
+          },
+          {
+            model: UserCoupon,
+            include: [
+              {
+                model: CouponTemplate,
+                as: "template",
+                attributes: ["id", "name", "type", "value", "min_spend", "max_discount"],
+                include: [
+                  {
+                    model: Store,
+                    attributes: ["id", "name"],
+                  },
+                ],
+              },
+            ],
+          },
         ],
         distinct: true,
       });
@@ -136,7 +161,7 @@ class OrderService {
     }
   }
 
-  async updateOrderStatus(id, status) {
+  async updateOrderStatus(id, status, pay_type) {
     try {
       const res = await Order.findByPk(id);
       if (res) {
@@ -146,11 +171,19 @@ class OrderService {
           throw orderExpiredError;
         }
 
+        const previousState = res.state;
+
         // 如果是更新为已支付状态 (1) 且是自提订单 (1) 且还没有取餐码
         if (status === 1 && res.order_type === 1 && !res.pickup_code) {
           const { getNextPickupCode } = require("../utils/redis");
           const code = await getNextPickupCode();
           res.pickup_code = "A" + code.toString().padStart(3, "0");
+        }
+
+        // 如果订单取消（状态变为4），退还优惠券
+        if (status === 4 && res.coupon_id) {
+          const couponService = require("../service/couponService");
+          await couponService.refundCoupon(res.id);
         }
 
         // 如果状态不再是待支付 (0)，则删除 Redis 中的超时键
@@ -159,8 +192,33 @@ class OrderService {
           await delKey(`order_timeout:${id}`);
         }
 
+        if (pay_type !== undefined && pay_type !== null) {
+          res.pay_type = pay_type;
+        }
+
         res.state = status;
         await res.save();
+
+        // 订单支付成功逻辑：从未支付 (0) 变为已支付 (1)
+        if (status === 1 && previousState === 0) {
+          const addedPoints = Math.floor(parseFloat(res.total_price));
+          if (addedPoints > 0) {
+            const { User } = require("../model/index");
+            const { calculateLevel } = require("../utils/level");
+            const user = await User.findByPk(res.user_id);
+            if (user) {
+              const currentPoints = user.points || 0;
+              const newPoints = currentPoints + addedPoints;
+              const newLevel = calculateLevel(newPoints);
+              
+              user.points = newPoints;
+              user.level = newLevel;
+              await user.save();
+              console.log(`[积分系统] 用户 ID: ${user.id} 支付订单成功，金额: ${res.total_price}，新增积分: ${addedPoints}，当前总积分: ${newPoints}，会员等级提升至: V${newLevel}`);
+            }
+          }
+        }
+
         return res;
       }
       return null;
@@ -189,7 +247,7 @@ class OrderService {
                   goods_name: {
                     [Op.like]: `%${name}%`,
                   },
-                  deletedAt: null,
+                  status: 1,
                 },
               },
             ],
@@ -226,6 +284,27 @@ class OrderService {
           {
             model: Store,
             attributes: ["id", "name", "address", "phone"],
+          },
+          {
+            model: User,
+            as: "user",
+            attributes: ["id", "nick_name", "user_name", "avatar"],
+          },
+          {
+            model: UserCoupon,
+            include: [
+              {
+                model: CouponTemplate,
+                as: "template",
+                attributes: ["id", "name", "type", "value", "min_spend", "max_discount"],
+                include: [
+                  {
+                    model: Store,
+                    attributes: ["id", "name"],
+                  },
+                ],
+              },
+            ],
           },
         ],
       });

@@ -5,8 +5,12 @@ const {
   getAreas,
   getStreets,
   getVillages,
+  getAllRegions,
 } = require("../controller/location");
 const router = new Router({ prefix: "/location" });
+
+// 获取所有省市区数据（合并为一个数组，带缓存）
+router.get("/all", getAllRegions);
 
 // 获取所有省
 router.get("/provinces", getProvinces);

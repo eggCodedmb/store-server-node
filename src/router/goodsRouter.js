@@ -52,6 +52,9 @@ router.get("/product/:id", goodsController.getProduct);
 // 路由：商品搜索
 router.get("/search_goods", goodsController.findGoodsByName);
 
+// 路由：批量校验商品在目标门店的可用性（切换门店时使用）
+router.post("/batch_check", auth, goodsController.batchCheckAvailability);
+
 // 新品
 router.get("/new_goods", goodsController.queryNewGoods);
 

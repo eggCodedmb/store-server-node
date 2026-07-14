@@ -7,6 +7,7 @@ const {
   findOrderById,
 } = require("../service/orderService");
 const { queryDefaultAddress } = require("../service/addressService");
+const settlementService = require("../service/settlementService");
 const {
   creatOrderError,
   deleteOrderError,
@@ -16,57 +17,151 @@ const {
 const GenId = require("../utils/IdGenerator");
 class OrderController {
   /**
+   * 价格预览/试算接口 (后端作为唯一真理)
+   */
+  async calculate(ctx) {
+    try {
+      const { items, coupon_id, store_id } = ctx.request.body;
+      if (!items || items.length === 0) {
+        throw new Error("结算商品不能为空");
+      }
+
+      // 如果传了优惠券，构建优惠券信息
+      let couponInfo = null;
+      if (coupon_id) {
+        const user_id = ctx.state.user.id;
+        couponInfo = { coupon_id, user_id, store_id: store_id || null };
+      }
+
+      const res = await settlementService.calculateFinalPrice(items, couponInfo, store_id);
+      ctx.body = {
+        code: 0,
+        message: "计算成功",
+        result: res,
+      };
+    } catch (error) {
+      console.error(error);
+      ctx.body = { code: 500, message: error.message };
+    }
+  }
+
+  /**
+   * 库存预检查接口 - 在创建订单前检查商品库存
+   */
+  async checkStock(ctx) {
+    try {
+      const { items, store_id } = ctx.request.body;
+      if (!items || items.length === 0) {
+        throw new Error("商品列表不能为空");
+      }
+
+      const Goods = require("../model/product/goods");
+      const result = [];
+
+      for (const item of items) {
+        const goodsId = item.goods_id || item.id;
+        const goods = await Goods.findByPk(goodsId);
+
+        if (!goods) {
+          result.push({
+            goods_id: goodsId,
+            name: item.name || '未知商品',
+            available: false,
+            reason: '商品不存在',
+            stock: 0
+          });
+        } else if (store_id && goods.store_id != store_id) {
+          result.push({
+            goods_id: goods.id,
+            name: goods.goods_name,
+            available: false,
+            reason: '商品不在当前门店',
+            stock: 0
+          });
+        } else if (goods.goods_num < item.quantity) {
+          result.push({
+            goods_id: goods.id,
+            name: goods.goods_name,
+            available: false,
+            reason: '库存不足',
+            stock: goods.goods_num
+          });
+        } else {
+          result.push({
+            goods_id: goods.id,
+            name: goods.goods_name,
+            available: true,
+            stock: goods.goods_num
+          });
+        }
+      }
+
+      const allAvailable = result.every(r => r.available);
+
+      ctx.body = {
+        code: 0,
+        message: allAvailable ? "库存充足" : "部分商品库存不足或不在当前门店",
+        result: {
+          all_available: allAvailable,
+          items: result
+        }
+      };
+    } catch (error) {
+      console.error(error);
+      ctx.body = { code: 500, message: error.message };
+    }
+  }
+
+  /**
    * 创建订单
-   * @param {Object} ctx - Koa 的上下文对象
-   * @returns {Promise<void>}
    */
   async create(ctx) {
     try {
       const user_id = ctx.state.user.id;
-
       let data = ctx.request.body.data;
+      const pay_type = ctx.request.body.pay_type;
 
-      if (data.lenght === 0) {
+      if (!data || data.length === 0) {
         return ctx.app.emit("error", creatOrderError, ctx);
       }
 
       const address = await queryDefaultAddress(user_id);
-
       if (!address.id) {
         throw new Error("默认没有地址");
       }
 
+      // 核心修改：重新计算总价，不信任前端传过来的 goods_price
+      const calcItems = data.map(item => ({
+        goods_id: item.id, // 老接口 item.id 实际上是 goods_id
+        spec_ids: item.spec_ids || [],
+        quantity: item.quantity
+      }));
+      const settlement = await settlementService.calculateFinalPrice(calcItems);
+
       const genid = new GenId({ WorkerId: 1 });
-
-      // 计算总价
-      let totalPrice = 0;
-
-      data.map((item) => {
-        totalPrice += item.goods_price * item.quantity;
-        totalPrice = +totalPrice.toFixed(2);
-      });
-
-      // 生成订单号
       const order_number = `D${genid.NextId()}`;
 
       // 组合订单
       const order = {
         user_id,
         address_id: +address.id,
-        total_price: totalPrice,
+        total_price: settlement.total_price,
         state: 0,
         order_number,
+        pay_type: pay_type || 1,
       };
       
       // 组合订单项
-      const orderItem = data.map((item) => ({
-        id: item.id,
-        goods_price: item.goods_price,
+      const orderItems = settlement.items.map((item) => ({
+        id: item.goods_id,
+        goods_price: item.unit_price,
         quantity: item.quantity,
+        specs: item.specs.map(s => s.name).join('/')
       }));
 
       // 创建订单
-      const res = await createOrder(order, orderItem);
+      const res = await createOrder(order, orderItems);
+      // ... (timeout and redis logic remains)
 
       const { ORDER_TIMEOUT } = require("../config/config.default");
       const timeoutMinutes = parseInt(ORDER_TIMEOUT) || 15;
@@ -106,41 +201,64 @@ class OrderController {
   async create_new(ctx) {
     try {
       const user_id = ctx.state.user.id;
-      const { items, order_type, address_id, remark, store_id, pay_type } = ctx.request.body;
+      const { items, order_type, address_id, remark, coupon_id, pay_type, store_id } = ctx.request.body;
 
       if (!items || items.length === 0) {
         throw new Error("购物车不能为空");
       }
 
+      // 核心修改：重新计算总价
+      const calcItems = items.map(item => ({
+        goods_id: item.goods_id || item.id,
+        spec_ids: item.spec_ids || [],
+        quantity: item.quantity
+      }));
+
+      // 如果传了优惠券，需要确定门店 ID（从商品中获取）
+      let couponInfo = null;
+      if (coupon_id) {
+        const Goods = require("../model/product/goods");
+        const firstGoods = await Goods.findByPk(calcItems[0].goods_id);
+        const storeId = firstGoods ? firstGoods.store_id : null;
+        couponInfo = { coupon_id, user_id, store_id: storeId };
+      }
+
+      const settlement = await settlementService.calculateFinalPrice(calcItems, couponInfo, store_id);
+
       const genid = new GenId({ WorkerId: 1 });
       const order_number = `YH${genid.NextId()}`;
-
-      // 计算总价
-      let total_price = 0;
-      items.forEach((item) => {
-        total_price += (item.totalPrice || item.price) * (item.quantity || 1);
-      });
 
       const orderData = {
         user_id,
         address_id: address_id || null, // 自提可为null
         store_id: store_id || null,
-        pay_type: pay_type || 1,
-        total_price,
+        total_price: settlement.total_price,
         order_number,
         state: 0, // 待支付
+        pay_type: pay_type || 1,
         order_type,
         remark,
+        coupon_id: coupon_id || null,
+        discount_amount: settlement.discount_amount,
+        original_price: settlement.original_price,
       };
-
-      const orderItems = items.map(item => ({
-        id: item.id, // 必须传 id，service 内部库存扣减依赖 item.id
+      // 创建订单项数据
+      const orderItems = settlement.items.map(item => ({
+        id: item.goods_id,
         quantity: item.quantity,
-        price: item.totalPrice / item.quantity,
-        specs: Array.isArray(item.specs) ? item.specs.join('/') : item.specs
+        price: item.unit_price,
+        specs: item.specs.map(s => s.name).join('/'),
+        spec_ids: item.specs.map(s => s.id).join(',') // 新增：保存规格ID列表
       }));
 
       const res = await createOrder(orderData, orderItems);
+
+      // 核销优惠券
+      if (coupon_id) {
+        const couponService = require("../service/couponService");
+        await couponService.useCoupon(coupon_id, res.id);
+      }
+
       const { ORDER_TIMEOUT } = require("../config/config.default");
       const timeoutMinutes = parseInt(ORDER_TIMEOUT) || 15;
 
@@ -176,8 +294,26 @@ class OrderController {
    */
   async pay_order(ctx) {
     try {
-      const { id } = ctx.request.body;
-      const res = await updateOrderStatus(id, 1); // 1: 制作中/已支付
+      const { id, pay_type } = ctx.request.body;
+      const res = await updateOrderStatus(id, 1, pay_type); // 1: 制作中/已支付
+      if (res) {
+        ctx.body = { code: 0, message: "支付成功", result: res };
+      } else {
+        ctx.body = { code: 404, message: "订单不存在" };
+      }
+    } catch (error) {
+      console.error(error);
+      ctx.body = { code: 500, message: "支付失败" };
+    }
+  }
+
+  /**
+   * 支付成功回调接口
+   */
+  async pay_success(ctx) {
+    try {
+      const { id, pay_type } = ctx.request.body;
+      const res = await updateOrderStatus(id, 1, pay_type); // 1: 制作中/已支付
       if (res) {
         ctx.body = { code: 0, message: "支付成功", result: res };
       } else {
@@ -254,8 +390,8 @@ class OrderController {
   async updateStatus(ctx) {
     try {
       const { id } = ctx.request.params;
-      const { state } = ctx.request.body;
-      const res = await updateOrderStatus(id, state);
+      const { state, pay_type } = ctx.request.body;
+      const res = await updateOrderStatus(id, state, pay_type);
       if (res) {
         ctx.body = {
           code: 0,

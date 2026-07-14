@@ -97,6 +97,7 @@ CREATE TABLE `orders`  (
   `total_price` decimal(10, 2) NOT NULL COMMENT '订单总价',
   `order_number` varchar(16) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL COMMENT '订单编号',
   `state` tinyint(4) NOT NULL COMMENT '订单状态',
+  `pay_type` tinyint(4) NULL DEFAULT 1 COMMENT '支付方式 (1: 微信支付, 2: 支付宝, 3: 云闪付)',
   `createdAt` datetime NOT NULL,
   `updatedAt` datetime NOT NULL,
   PRIMARY KEY (`id`) USING BTREE,
@@ -134,6 +135,7 @@ CREATE TABLE `notices`  (
   `status` tinyint(1) NOT NULL DEFAULT 1 COMMENT '状态 (true: 发布, false: 隐藏)',
   `author` varchar(255) NULL DEFAULT NULL COMMENT '发布者',
   `icon` varchar(255) NULL DEFAULT NULL COMMENT '公告图标',
+  `store_id` int(11) NULL DEFAULT NULL COMMENT '所属门店ID (NULL 表示全店公告)',
   `createdAt` datetime NOT NULL,
   `updatedAt` datetime NOT NULL,
   PRIMARY KEY (`id`) USING BTREE

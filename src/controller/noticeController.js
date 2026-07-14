@@ -72,8 +72,18 @@ class NoticeController {
 
   async findAll(ctx) {
     try {
-      const { pageNum, pageSize, title, storeId } = ctx.request.body;
-      const res = await findAllNotice(pageSize, pageNum, title, storeId);
+      // 兼容 POST body 和 GET query
+      const { 
+        pageNum, 
+        pageSize, 
+        title, 
+        storeId, 
+        store_id 
+      } = { ...ctx.request.body, ...ctx.request.query };
+      
+      const finalStoreId = storeId || store_id;
+      
+      const res = await findAllNotice(pageSize, pageNum, title, finalStoreId);
       ctx.body = {
         code: 0,
         message: "获取公告列表成功",

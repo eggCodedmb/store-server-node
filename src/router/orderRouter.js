@@ -9,16 +9,26 @@ const {
   getOneOrder,
   create_new,
   pay_order,
+  pay_success,
   getMyOrders,
+  calculate,
+  checkStock,
 } = require("../controller/orderController");
 const { orderInfoRules } = require("../constant/rules");
 const { orderFormError } = require("../constant/errType");
 
 const router = new Router({ prefix: "/order" });
 
+// 价格试算接口 (后端唯一真理)
+router.post("/calculate", auth, calculate);
+
+// 库存预检查接口
+router.post("/check_stock", auth, checkStock);
+
 // 益禾堂小程序新接口
 router.post("/create_new", auth, create_new);
 router.post("/pay", auth, pay_order);
+router.post("/pay_success", auth, pay_success);
 router.get("/my_list", auth, getMyOrders);
 
 router.get(

@@ -8,40 +8,50 @@ class GoodsService {
   async createGoods(goodsData) {
     const transaction = await sequelize.transaction();
     try {
-      const { specs, ...goods } = goodsData;
-      const res = await Goods.create(goods, { transaction });
+      const { specs, ...goodsBase } = goodsData;
+      const { SpecGroup, SpecOption, ProductSpecRel } = require("../model/index");
+
+      const res = await Goods.create(goodsBase, { transaction });
       const product_id = res.id;
 
       if (specs && Array.isArray(specs)) {
-        const { SpecGroup, SpecOption, ProductSpecRel } = require("../model/index");
         for (const spec of specs) {
           if (!spec.name || spec.name.trim() === "") continue;
 
           let group_id = spec.id;
           if (!group_id) {
-            const group = await SpecGroup.create({ name: spec.name }, { transaction });
+            const group = await SpecGroup.create(
+              {
+                name: spec.name,
+                select_type: spec.select_type || "single",
+                is_required:
+                  spec.is_required !== undefined ? spec.is_required : true,
+              },
+              { transaction }
+            );
             group_id = group.id;
             if (spec.options && Array.isArray(spec.options)) {
               const options = spec.options
-                .filter(opt => opt.name && opt.name.trim() !== "")
+                .filter((opt) => opt.name && opt.name.trim() !== "")
                 .map((opt) => ({
                   group_id: group_id,
                   name: opt.name,
                   price_delta: opt.price_delta,
+                  is_default: opt.is_default || false,
                 }));
               if (options.length > 0) {
                 await SpecOption.bulkCreate(options, { transaction });
               }
             }
           }
-          
+
           await ProductSpecRel.create({ product_id, group_id }, { transaction });
         }
       }
 
       await transaction.commit();
       await delKeyAll("product:*");
-      return res.dataValues ? res.dataValues : null;
+      return res.dataValues;
     } catch (error) {
       await transaction.rollback();
       throw error;
@@ -74,15 +84,24 @@ class GoodsService {
           let group_id = spec.id;
           if (!group_id) {
             // 自定义规格：创建新记录
-            const group = await SpecGroup.create({ name: spec.name }, { transaction });
+            const group = await SpecGroup.create(
+              {
+                name: spec.name,
+                select_type: spec.select_type || "single",
+                is_required:
+                  spec.is_required !== undefined ? spec.is_required : true,
+              },
+              { transaction }
+            );
             group_id = group.id;
             if (spec.options && Array.isArray(spec.options)) {
               const options = spec.options
-                .filter(opt => opt.name && opt.name.trim() !== "")
+                .filter((opt) => opt.name && opt.name.trim() !== "")
                 .map((opt) => ({
                   group_id: group_id,
                   name: opt.name,
                   price_delta: opt.price_delta,
+                  is_default: opt.is_default || false,
                 }));
               if (options.length > 0) {
                 await SpecOption.bulkCreate(options, { transaction });
@@ -126,12 +145,12 @@ class GoodsService {
       } else if (payload && Array.isArray(payload.ids)) {
         ids = payload.ids;
       } else if (payload && payload.id) {
-        ids = [payload.id];
+        ids = Array.isArray(payload.id) ? payload.id : [payload.id];
       }
 
       if (ids.length === 0) return;
 
-      const result = await Goods.destroy({ where: { id: { [Op.in]: ids } } });
+      const result = await Goods.update({ status: 0 }, { where: { id: { [Op.in]: ids } } });
       await delKeyAll("product:*");
       return result;
     } catch (error) {
@@ -141,8 +160,16 @@ class GoodsService {
 
   async restoreGoods(arr) {
     try {
-      const promises = arr.map((item) => Goods.restore({ where: { id: item } }));
-      const result = await Promise.all(promises);
+      let ids = [];
+      if (Array.isArray(arr)) {
+        ids = arr;
+      } else if (arr && Array.isArray(arr.ids)) {
+        ids = arr.ids;
+      } else if (arr && arr.id) {
+        ids = Array.isArray(arr.id) ? arr.id : [arr.id];
+      }
+      if (ids.length === 0) return;
+      const result = await Goods.update({ status: 1 }, { where: { id: { [Op.in]: ids } } });
       await delKeyAll("product:*");
       return result;
     } catch (error) {
@@ -156,6 +183,7 @@ class GoodsService {
         pageNum = 1,
         pageSize = 10,
         name = "",
+          status = "",
         stockFilter = "",
         sortField = "id",
         sortOrder = "DESC",
@@ -164,7 +192,10 @@ class GoodsService {
       } = queryParams;
 
       const whereOpt = {};
-      if (name) {
+      if (status !== "") {
+          whereOpt.status = status;
+        }
+        if (name) {
         whereOpt.goods_name = { [Op.like]: `%${name}%` };
       }
       if (storeId) {
@@ -219,7 +250,7 @@ class GoodsService {
   async getRemoveGoods(pageNum = 1, pageSize = 10, storeId = "") {
     try {
       const offset = (pageNum - 1) * pageSize;
-      const whereOpt = { deletedAt: { [Op.not]: null } };
+      const whereOpt = { status: 0 };
       if (storeId) {
         if (Array.isArray(storeId)) {
           whereOpt.store_id = { [Op.in]: storeId };
@@ -231,7 +262,6 @@ class GoodsService {
       }
       const { count, rows } = await Goods.findAndCountAll({
         where: whereOpt,
-        paranoid: false,
         offset: +offset,
         limit: +pageSize,
       });
@@ -252,6 +282,7 @@ class GoodsService {
           "goods_img",
           "goods_detail",
           "store_id",
+          "status",
         ],
         where: { id: { [Op.in]: arr } },
       });
@@ -263,7 +294,7 @@ class GoodsService {
 
   async searchGoodsByName(name, number = 10, storeId = "") {
     try {
-      const whereOpt = { goods_name: { [Op.like]: `%${name}%` }, deletedAt: null };
+      const whereOpt = { goods_name: { [Op.like]: `%${name}%` }, status: 1 };
       if (storeId) {
         if (Array.isArray(storeId)) {
           whereOpt.store_id = { [Op.in]: storeId };
@@ -287,7 +318,7 @@ class GoodsService {
   async queryNewGoogdsAll(pageNum = 1, pageSize = 10, storeId = "") {
     try {
       const offset = (pageNum - 1) * pageSize;
-      const whereOpt = {};
+      const whereOpt = { status: 1 };
       if (storeId) {
         if (Array.isArray(storeId)) {
           whereOpt.store_id = { [Op.in]: storeId };
@@ -317,7 +348,7 @@ class GoodsService {
         SELECT goods.*, COALESCE(SUM(order_items.quantity), 0) AS totalSales
         FROM goods
         LEFT JOIN order_items ON goods.id = order_items.goods_id
-        WHERE goods.deletedAt IS NULL
+        WHERE goods.status = 1
       `;
       if (storeId) {
         if (Array.isArray(storeId)) {
@@ -388,7 +419,7 @@ class GoodsService {
   }
 
   async getGoodsDetailById(id) {
-    const { SpecGroup, SpecOption } = require("../model/index");
+    const { SpecGroup, SpecOption, Store } = require("../model/index");
     const res = await Goods.findOne({
       where: { id },
       include: [
@@ -397,14 +428,19 @@ class GoodsService {
           through: { attributes: [] },
         },
         {
+          model: Store,
+          attributes: ["id", "name"],
+        },
+        {
           model: SpecGroup,
           through: { attributes: [] },
           include: [
             {
               model: SpecOption,
-              attributes: ["id", "name", "price_delta"],
+              attributes: ["id", "name", "price_delta", "is_default"],
             },
           ],
+          attributes: ["id", "name", "select_type", "is_required"],
         },
       ],
     });

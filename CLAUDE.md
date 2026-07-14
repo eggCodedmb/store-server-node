@@ -31,6 +31,8 @@ npm run backup:watch                  # Scheduled backup with cron
 # Use syncModels.js functions directly in code, not as CLI command
 ```
 
+**No test framework is configured**: `npm test` exits with an error. There are no test files or runner (jest/vitest/etc.) in the project. The `npm run build` (webpack) script is also non-functional — `webpack` is not installed and there is no webpack config. The app runs directly from source via `node ./src/main.js`.
+
 ## Architecture
 
 ### Layered Structure
@@ -42,6 +44,10 @@ npm run backup:watch                  # Scheduled backup with cron
 - **Models** (`src/model/`): Sequelize models with associations
 - **Middleware** (`src/middleware/`): Auth, validation, rate limiting, file upload
 - **Routers** (`src/router/`): Route definitions with middleware chains
+
+**Router auto-loading**: `src/router/index.js` reads every file in `src/router/` (except `index.js`) at startup and mounts whatever each exports via `router.use(r.routes())`. To add a new route group, just drop a file in `src/router/` that exports a koa-router instance — no central registration needed. A file that doesn't export `.routes()` is skipped with a console error.
+
+**Database connection**: A single shared Sequelize instance is created in `src/db/seq.js` and imported everywhere. It auto-authenticates on require. All models and `syncModels.js` use this same instance.
 
 ### Key Model Relationships
 
@@ -85,7 +91,7 @@ All config values exported from `process.env`. Key settings:
 
 **Caching**: User sessions, product lists, category trees (see `src/utils/redis.js`)
 
-**Pub/Sub**: Redis keyspace notifications for expired keys. The `redisSubscriber` service (`src/service/redisSubscriber.js`) listens for key expiration events, initialized in `src/main.js` on startup. Used for time-based business logic (e.g., auto-canceling unpaid orders).
+**Pub/Sub**: Redis keyspace notifications for expired keys. The `redisSubscriber` service (`src/service/redisSubscriber.js`) listens for key expiration events, initialized in `src/main.js` on startup. On init it sets `notify-keyspace-events` to `Ex` and subscribes to `__keyevent@0__:expired`. The concrete use: when an `order_timeout:<orderId>` key expires, the unpaid order (`state === 0`) is auto-canceled by setting `state = 4`. Order states: `0` = unpaid/pending, `4` = canceled.
 
 ### RBAC with Casbin
 
@@ -170,3 +176,5 @@ Many operations are scoped to stores. When querying goods, orders, or staff:
 - **WeChat credentials**: Required for mini-program login. Set `WX_APPID` and `WX_APPSECRET` in `.env`.
 - **Node version**: Project uses Volta to pin Node 24.16.0 and npm 8.19.4 (see `package.json`).
 - **Chinese comments**: Codebase uses Chinese for comments and console logs. Maintain this convention when adding code.
+- **Casbin enforcer**: Lazily initialized singleton in `src/utils/casbin.js` via `getEnforcer()`. Uses the model config at `src/config/rbac_model.conf` and the Sequelize adapter (stores policies in DB).
+- **Socket.io is scaffolded but not wired up**: `src/utils/socket/index.js` defines `initSocket`/`getSocketInstance`, but `initSocket` is never called (the app uses `app.listen`, not a raw http server). Wiring real-time features requires creating an http server from the Koa app and calling `initSocket(server)`. Treat "real-time" as aspirational until then.

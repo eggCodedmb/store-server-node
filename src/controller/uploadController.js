@@ -12,8 +12,6 @@ const {
 } = require("../utils/upload");
 const {
   UPLOAD_TYPE,
-  BASEURL,
-  STORAGE_HOST,
 } = require("../config/config.default");
 const UUID = require("../utils/uuid");
 const sendResponse = require("../utils/response");
@@ -30,14 +28,8 @@ class uploadController {
     }
 
     try {
-      let URL_BASEURL = BASEURL;
-
       const fileNames = [];
 
-      //判断URL地址是否/结束
-      if (!BASEURL.endsWith("/")) {
-        URL_BASEURL = BASEURL + "/";
-      }
       // 文件重命名
       if (Array.isArray(file)) {
         for (let item of file) {
@@ -51,9 +43,8 @@ class uploadController {
 
       const mames = queryFileName(file);
 
-      fileNames.push(
-        ...mames.map((item) => `${URL_BASEURL}${UPLOAD_TYPE}/${item}`)
-      );
+      // 返回相对路径，包含上传类型子目录，不拼接完整 URL
+      fileNames.push(...mames.map((name) => `/${UPLOAD_TYPE}/${name}`));
 
       switch (UPLOAD_TYPE) {
         case "local":
@@ -68,16 +59,16 @@ class uploadController {
               if (!minioRes) {
                 throw new Error("MinIO upload failed");
               }
-              const fileItem = `http://${STORAGE_HOST}:9000${minioRes}`;
-              minioList.push(fileItem);
+              // 返回相对路径，包含 bucket 前缀
+              minioList.push(minioRes);
             }
           } else {
             const minioRes = await minioUpload(file.filepath);
             if (!minioRes) {
               throw new Error("MinIO upload failed");
             }
-            const minioUrl = `http://${STORAGE_HOST}:9000${minioRes}`;
-            minioList.push(minioUrl);
+            // 返回相对路径，包含 bucket 前缀
+            minioList.push(minioRes);
           }
           sendResponse(ctx, 0, "上传成功", minioList);
           break;

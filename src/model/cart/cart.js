@@ -35,6 +35,11 @@ const Cart = seq.define(
       defaultValue: true,
       comment: "是否选中",
     },
+    specs: {
+      type: DataTypes.STRING,
+      allowNull: true,
+      comment: "规格快照 (JSON 或字符串)",
+    },
   },
   {
     timestamps: true,

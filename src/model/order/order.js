@@ -39,6 +39,12 @@ const Order = seq.define(
       allowNull: false,
       comment: "订单状态",
     },
+    pay_type: {
+      type: DataTypes.TINYINT,
+      allowNull: true,
+      defaultValue: 1,
+      comment: "支付方式 (1: 微信支付, 2: 支付宝, 3: 云闪付)",
+    },
     order_type: {
       type: DataTypes.TINYINT,
       allowNull: false,
@@ -60,6 +66,21 @@ const Order = seq.define(
       type: DataTypes.STRING(20),
       allowNull: true,
       comment: "取餐码",
+    },
+    coupon_id: {
+      type: DataTypes.INTEGER,
+      allowNull: true,
+      comment: "使用的优惠券 id（user_coupons 表）",
+    },
+    discount_amount: {
+      type: DataTypes.DECIMAL(10, 2),
+      defaultValue: 0,
+      comment: "优惠金额",
+    },
+    original_price: {
+      type: DataTypes.DECIMAL(10, 2),
+      allowNull: true,
+      comment: "优惠前原价",
     },
   },
   {

@@ -8,7 +8,7 @@ class SpecController {
         include: [
           {
             model: SpecOption,
-            attributes: ["id", "name", "price_delta"],
+            attributes: ["id", "name", "price_delta", "is_default"],
           },
         ],
       });
@@ -24,13 +24,14 @@ class SpecController {
   }
 
   async create(ctx) {
-    const { name, options } = ctx.request.body;
+    const { name, select_type, is_required, options } = ctx.request.body;
     try {
-      const group = await SpecGroup.create({ name });
+      const group = await SpecGroup.create({ name, select_type, is_required });
       if (options && options.length > 0) {
         const specOptions = options.map((opt) => ({
           name: opt.name,
           price_delta: opt.price_delta || 0,
+          is_default: opt.is_default || false,
           group_id: group.id,
         }));
         await SpecOption.bulkCreate(specOptions);
@@ -48,23 +49,31 @@ class SpecController {
 
   async update(ctx) {
     const { id } = ctx.params;
-    const { name, options } = ctx.request.body;
+    const { name, select_type, is_required, options } = ctx.request.body;
     const transaction = await sequelize.transaction();
     try {
-      await SpecGroup.update({ name }, { where: { id }, transaction });
-      
+      await SpecGroup.update(
+        { name, select_type, is_required },
+        { where: { id }, transaction }
+      );
+
       // 先删除旧选项，再创建新选项（简单粗暴但有效）
-      await SpecOption.destroy({ where: { group_id: id }, force: true, transaction });
-      
+      await SpecOption.destroy({
+        where: { group_id: id },
+        force: true,
+        transaction,
+      });
+
       if (options && options.length > 0) {
         const specOptions = options.map((opt) => ({
           name: opt.name,
           price_delta: opt.price_delta || 0,
+          is_default: opt.is_default || false,
           group_id: id,
         }));
         await SpecOption.bulkCreate(specOptions, { transaction });
       }
-      
+
       await transaction.commit();
       ctx.body = {
         code: 0,
