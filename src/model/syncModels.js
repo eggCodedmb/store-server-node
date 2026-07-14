@@ -23,6 +23,7 @@ const {
   UserCoupon,
   CheckinReward,
   CheckinRecord,
+  Banner,
 } = require("./index");
 const seq = require("../db/seq");
 
@@ -44,6 +45,7 @@ const syncModels = async () => {
     await Notice.sync({ force: true });
     await SpecGroup.sync({ force: true });
     await Topping.sync({ force: true });
+    await Banner.sync({ force: true });
 
     // 2. 同步映射表和依赖表
     await UserRole.sync({ force: true });
@@ -104,6 +106,7 @@ const dropModels = async () => {
     await Store.drop();
     await User.drop();
     await Notice.drop();
+    await Banner.drop();
     await seq.query("SET FOREIGN_KEY_CHECKS = 1");
     console.log("所有模型删除成功");
   } catch (error) {

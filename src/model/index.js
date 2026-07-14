@@ -13,6 +13,7 @@ const ProductSpecRel = require("./product/productSpecRel");
 const Notice = require("./system/notice");
 const Store = require("./store/store");
 const StorePhoto = require("./store/storePhoto");
+const Banner = require("./system/banner");
 
 // Coupon Models
 const CouponTemplate = require("./coupon/couponTemplate");
@@ -118,6 +119,10 @@ Goods.belongsTo(Store, { foreignKey: "store_id" });
 Store.hasMany(StorePhoto, { foreignKey: "store_id", as: "photos" });
 StorePhoto.belongsTo(Store, { foreignKey: "store_id" });
 
+// 门店和轮播图关联关系
+Store.hasMany(Banner, { foreignKey: "store_id", as: "banners" });
+Banner.belongsTo(Store, { foreignKey: "store_id" });
+
 /**
  * 优惠券关联关系
  */
@@ -179,4 +184,5 @@ module.exports = {
   UserCoupon,
   CheckinReward,
   CheckinRecord,
+  Banner,
 };

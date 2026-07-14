@@ -333,4 +333,35 @@ module.exports = {
     message: "签到奖励优惠券模板不存在或已停用",
     result: "",
   },
+  // Banner 错误类型
+  bannerFormatError: {
+    code: "11000",
+    message: "Banner参数有误",
+    result: "",
+  },
+  bannerCreateError: {
+    code: "11001",
+    message: "创建Banner失败",
+    result: "",
+  },
+  bannerUpdateError: {
+    code: "11002",
+    message: "更新Banner失败",
+    result: "",
+  },
+  bannerDeleteError: {
+    code: "11003",
+    message: "删除Banner失败",
+    result: "",
+  },
+  bannerNotFoundError: {
+    code: "11004",
+    message: "Banner不存在",
+    result: "",
+  },
+  bannerListError: {
+    code: "11005",
+    message: "获取Banner列表失败",
+    result: "",
+  },
 };

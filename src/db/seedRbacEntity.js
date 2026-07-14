@@ -1,4 +1,4 @@
-﻿const { Role, Permission, User } = require("../model/index");
+const { Role, Permission, User } = require("../model/index");
 const RbacService = require("../service/rbacService");
 const { hashPassword } = require("../utils/passwordUtils/bcrypt");
 
@@ -24,6 +24,7 @@ const seedRBAC = async () => {
       { name: "门店管理", code: "/store_manage", type: 1, parent_id: 0 },
       { name: "优惠券管理", code: "/coupon_manage", type: 1, parent_id: 0 },
       { name: "活动管理", code: "/checkin_manage", type: 1, parent_id: 0 },
+      { name: "Banner管理", code: "/banner_manage", type: 1, parent_id: 0 },
       { name: "系统管理", code: "/system", type: 1, parent_id: 0 },
       { name: "角色管理", code: "/system/role", type: 1, parent_id: 8 }, // 根据顺序更新ID
       { name: "菜单管理", code: "/system/menu", type: 1, parent_id: 8 },
@@ -94,6 +95,12 @@ const seedRBAC = async () => {
       { name: "查询签到奖励配置接口", code: "api:checkin:rewards_get", type: 3, path: "/checkin/rewards", method: "GET", parent_id: 9 },
       { name: "更新签到奖励配置接口", code: "api:checkin:rewards_put", type: 3, path: "/checkin/rewards", method: "PUT", parent_id: 9 },
       { name: "查询签到记录接口", code: "api:checkin:records", type: 3, path: "/checkin/records", method: "GET", parent_id: 9 },
+
+      // Banner 管理接口
+      { name: "查询Banner列表接口", code: "api:banner:list", type: 3, path: "/banners/list", method: "GET", parent_id: 0 },
+      { name: "创建Banner接口", code: "api:banner:create", type: 3, path: "/banners", method: "POST", parent_id: 0 },
+      { name: "更新Banner接口", code: "api:banner:update", type: 3, path: "/banners/:id", method: "PUT", parent_id: 0 },
+      { name: "删除Banner接口", code: "api:banner:delete", type: 3, path: "/banners/:id", method: "DELETE", parent_id: 0 },
     ];
 
     const createdPerms = [];
@@ -120,6 +127,7 @@ const seedRBAC = async () => {
       { parent: "/store_manage", children: ["api:store:all", "api:store:create", "api:store:update", "api:store:delete"] },
       { parent: "/coupon_manage", children: ["coupon:add_btn", "coupon:edit_btn", "api:coupon:list", "api:coupon:create", "api:coupon:update", "api:coupon:delete", "api:coupon:records"] },
       { parent: "/checkin_manage", children: ["api:checkin:rewards_get", "api:checkin:rewards_put", "api:checkin:records"] },
+      { parent: "/banner_manage", children: ["api:banner:list", "api:banner:create", "api:banner:update", "api:banner:delete"] },
     ];
 
     for (const rel of relations) {
