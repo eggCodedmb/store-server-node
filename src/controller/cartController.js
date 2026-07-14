@@ -20,15 +20,22 @@ class CartController {
   async addCart(ctx) {
     try {
       const user_id = ctx.state.user.id;
-      const { goods_id, specs } = ctx.request.body;
+      const { goods_id, specs, store_id } = ctx.request.body;
       // 操作数据库，创建或更新购物车记录
-      const res = await createOrUpdate(user_id, goods_id, specs);
+      const res = await createOrUpdate(user_id, goods_id, specs, store_id);
       ctx.body = {
         code: 0,
         message: "添加成功",
         result: res,
       };
     } catch (error) {
+      if (error.code) {
+        ctx.body = {
+          code: error.code,
+          message: error.message,
+        };
+        return;
+      }
       ctx.app.emit("error", addCartError, ctx);
       console.log(error);
 
@@ -95,14 +102,21 @@ class CartController {
   async updateOneNumber(ctx) {
     try {
       const { id } = ctx.request.params;
-      const { number } = ctx.request.body;
-      const res = await updateNumber(id, number);
+      const { number, store_id } = ctx.request.body;
+      const res = await updateNumber(id, number, store_id);
       ctx.body = {
         code: 0,
         message: "修改购物车成功",
         result: res,
       };
     } catch (error) {
+      if (error.code) {
+        ctx.body = {
+          code: error.code,
+          message: error.message,
+        };
+        return;
+      }
       throw error;
     }
   }

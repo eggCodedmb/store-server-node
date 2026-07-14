@@ -1,4 +1,4 @@
-﻿const {
+const {
   createGoods,
   updateGoods,
   removeGoods,
@@ -176,7 +176,8 @@ class GoodsController {
             matched_name: match.goods_name,
             available: match.goods_num > 0,
             stock: match.goods_num,
-            price: parseFloat(match.goods_price || '0')
+            price: parseFloat(match.goods_price || '0'),
+            image: match.goods_img || '',
           });
         } else {
           result.push({
@@ -187,6 +188,7 @@ class GoodsController {
             available: false,
             stock: 0,
             price: 0,
+            image: '',
             reason: '该门店无此商品'
           });
         }

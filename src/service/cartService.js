@@ -10,8 +10,25 @@ class CartService {
    * @param {string} specs - 商品规格快照
    * @returns {Promise<Object>} - 返回创建或更新的购物车条目
    */
-  async createOrUpdate(user_id, goods_id, specs = null) {
+  async createOrUpdate(user_id, goods_id, specs = null, store_id = null) {
     try {
+      const goods = await Goods.findByPk(goods_id);
+      if (!goods) {
+        const error = new Error("商品不存在");
+        error.code = "10205";
+        throw error;
+      }
+      if (store_id && goods.store_id !== store_id) {
+        const error = new Error("该商品不在当前选中门店");
+        error.code = "10305";
+        throw error;
+      }
+      if (goods.goods_num <= 0) {
+        const error = new Error("该商品已售罄或库存不足");
+        error.code = "10306";
+        throw error;
+      }
+
       const res = await Cart.findOne({
         where: {
           [Op.and]: {
@@ -22,6 +39,12 @@ class CartService {
         },
       });
       if (res) {
+        // 检查加 1 后的库存是否足够
+        if (goods.goods_num < res.number + 1) {
+          const error = new Error("该商品库存不足");
+          error.code = "10306";
+          throw error;
+        }
         // 已经存在一条记录，增加数量
         await res.increment("number");
         return await res.reload(); // 返回更新后的记录
@@ -174,8 +197,31 @@ class CartService {
     }
   }
 
-  async updateNumber(id, number) {
+  async updateNumber(id, number, store_id = null) {
     try {
+      const cart = await Cart.findByPk(id, {
+        include: { model: Goods, as: "product" }
+      });
+      if (!cart) {
+        const error = new Error("购物车记录不存在");
+        error.code = "10304";
+        throw error;
+      }
+      if (!cart.product) {
+        const error = new Error("商品不存在");
+        error.code = "10205";
+        throw error;
+      }
+      if (store_id && cart.product.store_id !== store_id) {
+        const error = new Error("该商品不在当前选中门店");
+        error.code = "10305";
+        throw error;
+      }
+      if (cart.product.goods_num < number) {
+        const error = new Error("库存不足");
+        error.code = "10306";
+        throw error;
+      }
       const res = await Cart.update(
         { number },
         {

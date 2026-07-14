@@ -33,7 +33,7 @@ class OrderController {
         couponInfo = { coupon_id, user_id, store_id: store_id || null };
       }
 
-      const res = await settlementService.calculateFinalPrice(items, couponInfo);
+      const res = await settlementService.calculateFinalPrice(items, couponInfo, store_id);
       ctx.body = {
         code: 0,
         message: "计算成功",
@@ -50,7 +50,7 @@ class OrderController {
    */
   async checkStock(ctx) {
     try {
-      const { items } = ctx.request.body;
+      const { items, store_id } = ctx.request.body;
       if (!items || items.length === 0) {
         throw new Error("商品列表不能为空");
       }
@@ -68,6 +68,14 @@ class OrderController {
             name: item.name || '未知商品',
             available: false,
             reason: '商品不存在',
+            stock: 0
+          });
+        } else if (store_id && goods.store_id != store_id) {
+          result.push({
+            goods_id: goods.id,
+            name: goods.goods_name,
+            available: false,
+            reason: '商品不在当前门店',
             stock: 0
           });
         } else if (goods.goods_num < item.quantity) {
@@ -92,7 +100,7 @@ class OrderController {
 
       ctx.body = {
         code: 0,
-        message: allAvailable ? "库存充足" : "部分商品库存不足",
+        message: allAvailable ? "库存充足" : "部分商品库存不足或不在当前门店",
         result: {
           all_available: allAvailable,
           items: result
@@ -193,7 +201,7 @@ class OrderController {
   async create_new(ctx) {
     try {
       const user_id = ctx.state.user.id;
-      const { items, order_type, address_id, remark, coupon_id, pay_type } = ctx.request.body;
+      const { items, order_type, address_id, remark, coupon_id, pay_type, store_id } = ctx.request.body;
 
       if (!items || items.length === 0) {
         throw new Error("购物车不能为空");
@@ -215,7 +223,7 @@ class OrderController {
         couponInfo = { coupon_id, user_id, store_id: storeId };
       }
 
-      const settlement = await settlementService.calculateFinalPrice(calcItems, couponInfo);
+      const settlement = await settlementService.calculateFinalPrice(calcItems, couponInfo, store_id);
 
       const genid = new GenId({ WorkerId: 1 });
       const order_number = `YH${genid.NextId()}`;

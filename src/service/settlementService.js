@@ -10,7 +10,7 @@ class SettlementService {
    * @param {Object} couponInfo - 优惠券信息 { coupon_id, store_id }（可选）
    * @returns {Promise<Object>} - { totalPrice, discountAmount, originalPrice, details }
    */
-  async calculateFinalPrice(items, couponInfo = null) {
+  async calculateFinalPrice(items, couponInfo = null, store_id = null) {
     let totalPrice = 0;
     const details = [];
 
@@ -21,6 +21,14 @@ class SettlementService {
       const goods = await Goods.findByPk(goods_id);
       if (!goods) {
         throw new Error(`商品ID ${goods_id} 不存在`);
+      }
+
+      // 验证门店匹配与库存
+      if (store_id && goods.store_id != store_id) {
+        throw new Error(`商品 ${goods.goods_name} 不在当前门店`);
+      }
+      if (goods.goods_num < quantity) {
+        throw new Error(`商品 ${goods.goods_name} 库存不足`);
       }
 
       let itemBasePrice = parseFloat(goods.goods_price);

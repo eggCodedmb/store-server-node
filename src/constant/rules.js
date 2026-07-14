@@ -232,6 +232,11 @@ module.exports = {
       allowEmpty: true,
       description: "商品规格快照",
     },
+    store_id: {
+      type: "integer",
+      required: false,
+      description: "当前门店 ID，选填",
+    },
   },
   cartSelectRules: {
     id: {
@@ -251,6 +256,11 @@ module.exports = {
       type: "integer",
       required: true,
       description: "商品数量，必须是整数且必填",
+    },
+    store_id: {
+      type: "integer",
+      required: false,
+      description: "当前门店 ID，选填",
     },
   },
   // 购物车删除 数据类型[1,2,3]
