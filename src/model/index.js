@@ -101,6 +101,10 @@ Store.belongsToMany(User, {
   foreignKey: "storeId",
 });
 
+// 门店和订单关联关系
+Store.hasMany(Order, { foreignKey: "store_id" });
+Order.belongsTo(Store, { foreignKey: "store_id" });
+
 // 门店和商品关联关系
 Store.hasMany(Goods, { foreignKey: "store_id" });
 Goods.belongsTo(Store, { foreignKey: "store_id" });

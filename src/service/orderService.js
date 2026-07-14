@@ -2,6 +2,7 @@ const Order = require("../model/order/order");
 const OrderItem = require("../model/order/orderItem");
 const Goods = require("../model/product/goods");
 const Address = require("../model/address/address");
+const Store = require("../model/store/store");
 const seq = require("../db/seq");
 const { Op } = require("sequelize");
 const { productInventory } = require("../service/goodsService");
@@ -95,6 +96,10 @@ class OrderService {
           },
           {
             model: Address,
+          },
+          {
+            model: Store,
+            attributes: ["id", "name", "address", "phone"],
           },
         ],
         distinct: true,
@@ -217,6 +222,10 @@ class OrderService {
           },
           {
             model: Address,
+          },
+          {
+            model: Store,
+            attributes: ["id", "name", "address", "phone"],
           },
         ],
       });

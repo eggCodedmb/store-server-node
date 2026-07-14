@@ -45,6 +45,17 @@ const Order = seq.define(
       defaultValue: 1,
       comment: "订单类型 (1: 自提, 2: 外卖)",
     },
+    store_id: {
+      type: DataTypes.INTEGER,
+      allowNull: true,
+      comment: "门店id",
+    },
+    pay_type: {
+      type: DataTypes.TINYINT,
+      allowNull: true,
+      defaultValue: 1,
+      comment: "支付方式 (1: 微信支付, 2: 支付宝, 3: 云闪付)",
+    },
     pickup_code: {
       type: DataTypes.STRING(20),
       allowNull: true,

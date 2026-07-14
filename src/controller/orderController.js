@@ -106,7 +106,7 @@ class OrderController {
   async create_new(ctx) {
     try {
       const user_id = ctx.state.user.id;
-      const { items, order_type, address_id, remark } = ctx.request.body;
+      const { items, order_type, address_id, remark, store_id, pay_type } = ctx.request.body;
 
       if (!items || items.length === 0) {
         throw new Error("购物车不能为空");
@@ -124,6 +124,8 @@ class OrderController {
       const orderData = {
         user_id,
         address_id: address_id || null, // 自提可为null
+        store_id: store_id || null,
+        pay_type: pay_type || 1,
         total_price,
         order_number,
         state: 0, // 待支付
