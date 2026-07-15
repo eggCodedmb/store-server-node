@@ -37,6 +37,58 @@ async function assignDefaultRoleInternal(userId) {
   }
 }
 
+// 微信 Access Token 内存缓存
+let tokenCache = {
+  accessToken: "",
+  expiresAt: 0,
+};
+
+/**
+ * 获取微信小程序 Access Token
+ */
+async function getWechatAccessToken() {
+  const now = Date.now();
+  if (tokenCache.accessToken && tokenCache.expiresAt > now) {
+    return tokenCache.accessToken;
+  }
+
+  const url = `https://api.weixin.qq.com/cgi-bin/token?grant_type=client_credential&appid=${WX_APPID}&secret=${WX_APPSECRET}`;
+  
+  const res = await new Promise((resolve, reject) => {
+    https.get(url, (res) => {
+      let data = "";
+      res.on("data", (chunk) => (data += chunk));
+      res.on("end", () => resolve(JSON.parse(data)));
+    }).on("error", (err) => reject(err));
+  });
+
+  if (res.errcode) {
+    throw new Error(`获取微信access_token失败: ${res.errmsg}`);
+  }
+
+  tokenCache.accessToken = res.access_token;
+  tokenCache.expiresAt = now + (res.expires_in || 7200) * 1000 - 300000; // 提前5分钟过期
+  return tokenCache.accessToken;
+}
+
+/**
+ * 根据 phoneCode 获取用户手机号
+ */
+async function getWechatPhoneNumber(phoneCode) {
+  const token = await getWechatAccessToken();
+  const url = `https://api.weixin.qq.com/wxa/business/getuserphonenumber?access_token=${token}`;
+  
+  const axios = require("axios");
+  const response = await axios.post(url, { code: phoneCode });
+  
+  const data = response.data;
+  if (data.errcode !== 0) {
+    throw new Error(`获取手机号失败: ${data.errmsg} (code: ${data.errcode})`);
+  }
+  
+  return data.phone_info.purePhoneNumber || data.phone_info.phoneNumber;
+}
+
 class UserController {
   /**
    * 获取当前用户的权限清单
@@ -108,12 +160,13 @@ class UserController {
     }
   }
 
+
   /**
    * 微信小程序登录
    */
   async wechatLogin(ctx) {
     try {
-      const { code, userInfo } = ctx.request.body;
+      const { code, phoneCode, userInfo } = ctx.request.body;
       if (!code) {
         ctx.body = { code: "10010", message: "Missing code" };
         return;
@@ -135,7 +188,18 @@ class UserController {
       }
 
       const { openid, unionid } = wxRes;
-      const user = await findOrCreateByOpenid(openid, { ...userInfo, unionid });
+
+      // 尝试获取用户手机号
+      let phone = null;
+      if (phoneCode) {
+        try {
+          phone = await getWechatPhoneNumber(phoneCode);
+        } catch (phoneErr) {
+          console.error("微信获取手机号失败(测试环境或配置有误):", phoneErr.message);
+        }
+      }
+
+      const user = await findOrCreateByOpenid(openid, { ...userInfo, unionid, phone });
       
       // 异步分配角色，不阻塞主流程
       assignDefaultRoleInternal(user.id).catch(e => console.error("Async Role Assign failed:", e));
