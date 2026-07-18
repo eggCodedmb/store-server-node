@@ -20,6 +20,11 @@ const User = seq.define(
       allowNull: false,
       comment: "头像",
     },
+    phone: {
+      type: DataTypes.STRING,
+      allowNull: true,
+      comment: "手机号",
+    },
     email: {
       type: DataTypes.STRING,
       //是否为空

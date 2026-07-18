@@ -70,12 +70,13 @@ class UserService {
    * @param {object} userInfo 用户额外信息 (如昵称、头像)
    */
   async findOrCreateByOpenid(openid, userInfo = {}) {
-    const { nick_name, avatar, unionid } = userInfo;
+    const { nick_name, avatar, unionid, phone } = userInfo;
     const [user, created] = await User.findOrCreate({
       where: { openid },
       defaults: {
         openid,
         unionid,
+        phone,
         nick_name: nick_name || `微信用户_${openid.slice(-6)}`,
         avatar: avatar || "https://cube.elemecdn.com/0/88/03b0d39583f48206768a7534e55bcpng.png",
         user_name: `wx_${openid.slice(-10)}`,
@@ -85,6 +86,12 @@ class UserService {
         level: 1,
       },
     });
+
+    if (!created && phone && user.phone !== phone) {
+      user.phone = phone;
+      await user.save();
+    }
+
     return user.dataValues;
   }
 
@@ -95,7 +102,7 @@ class UserService {
    * @returns {Promise<boolean>} 返回更新是否成功
    */
   async updateById(id, data) {
-    const { email, avatar, nick_name, password, store_ids, points, level } = data || {};
+    const { email, avatar, nick_name, password, store_ids, points, level, phone } = data || {};
     const seq = require("../db/seq");
     const transaction = await seq.transaction();
 
@@ -106,6 +113,7 @@ class UserService {
         ...(avatar && { avatar }),
         ...(nick_name && { nick_name }),
         ...(password && { password }),
+        ...(phone !== undefined && { phone }),
       };
 
       if (points !== undefined) {

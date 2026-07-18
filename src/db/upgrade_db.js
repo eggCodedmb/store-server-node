@@ -39,6 +39,18 @@ async function main() {
       console.log("level 字段已存在，无需添加。");
     }
 
+    console.log("正在检查 users 表中是否存在 phone 字段...");
+    const [phoneResults] = await seq.query("SHOW COLUMNS FROM `users` LIKE 'phone'");
+    if (phoneResults.length === 0) {
+      console.log("正在向 users 表中添加 phone 字段...");
+      await seq.query(
+        "ALTER TABLE `users` ADD COLUMN `phone` VARCHAR(255) NULL DEFAULT NULL COMMENT '手机号' AFTER `avatar`"
+      );
+      console.log("phone 字段添加成功！");
+    } else {
+      console.log("phone 字段已存在，无需添加。");
+    }
+
     process.exit(0);
   } catch (error) {
     console.error("数据库升级失败:", error);
